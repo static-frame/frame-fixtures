@@ -1,17 +1,263 @@
 import typing as tp
 from types import ModuleType
 import ast
+import random
+from itertools import chain
+from itertools import cycle
+from functools import lru_cache
+import string
+from hashlib import blake2b
 
 import numpy as np #type: ignore
 
 if tp.TYPE_CHECKING:
     from static_frame import Frame #type: ignore #pylint: disable=W0611 #pragma: no cover
-
+    from static_frame.core.util import DtypeSpecifier
+    from static_frame.core.container import ContainerOperand
+    from static_frame import Index
+    from static_frame import IndexHierarchy
+    from static_frame import TypeBlocks
 
 StrToType = tp.Dict[str, tp.Type[tp.Any]]
 ConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
 ConstructorType = tp.Tuple[ConstructorArg, ...]
 
+ConstructorOrConstructors = tp.Union[
+        tp.Type['ContainerOperand'],
+        tp.Tuple[tp.Type['ContainerOperand'], ...]
+        ]
+ShapeType = tp.Tuple[int, int]
+IndexTypes = tp.Union['Index', 'IndexHierarchy']
+
+
+DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
+DTYPE_OBJECT = np.dtype(object)
+DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
+
+
+class SourceValues:
+    MAX_SIZE = 100_000
+    SEED = 19
+
+    _INTEGERS = None
+    _CHARS = None
+
+    @classmethod
+    def shuffle(cls, mutable: np.ndarray) -> None:
+        np.random.seed(cls.SEED)
+        np.random.shuffle(mutable)
+
+        # state = random.getstate()
+        # random.seed(42)
+        # random.shuffle(mutable)
+        # random.setstate(state)
+
+    @classmethod
+    def get_ints(cls) -> np.ndarray:
+        '''Return a fixed sequence of unique integers, of size equal to MAX_SIZE.
+        '''
+        if cls._INTEGERS is None:
+            values = np.arange(cls.MAX_SIZE, dtype=np.int64)
+            cls.shuffle(values)
+            cls._INTEGERS = values
+
+        return cls._INTEGERS
+
+    @classmethod
+    def get_chars(cls) -> tp.Sequence[str]:
+
+        if cls._CHARS is None:
+            values = np.empty(cls.MAX_SIZE, dtype='<U12')
+
+            for i in cls.get_ints():
+                h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+                h.update(str.encode(str(i)))
+                values[i] = h.hexdigest()
+            cls._CHARS = values
+
+        return cls._CHARS
+
+
+    @classmethod
+    def dtype_to_element_iter(cls,
+            dtype: np.dtype,
+            ) -> tp.Iterator[tp.Any]:
+        # TODO: add a rotation or look ahead value
+
+        ints = cls.get_ints()
+        chars = cls.get_chars()
+
+        if dtype.kind == 'i': # int
+            def gen() -> tp.Iterator[tp.Any]:
+                for v in ints:
+                    yield v * (-1 if v % 3 == 0 else 1)
+
+        elif dtype.kind == 'u': # int unsigned
+            def gen() -> tp.Iterator[tp.Any]:
+                yield from chain(ints[-1000:], ints[:-1000])
+
+        elif dtype.kind == 'f': # float
+            def gen() -> tp.Iterator[tp.Any]:
+                yield np.nan
+                for v in ints:
+                    yield v * (-0.02 if v % 3 else 0.02)
+
+        elif dtype.kind == 'c': # complex
+            def gen() -> tp.Iterator[tp.Any]:
+                for v, i in zip(
+                        cls.dtype_to_element_iter(np.dtype(float)),
+                        cls.dtype_to_element_iter(np.dtype(float)),
+                        ):
+                    yield complex(v, i)
+
+        elif dtype.kind == 'b': # boolean
+            def gen() -> tp.Iterator[bool]:
+                for v in ints:
+                    yield v % 2 == 0
+
+        elif dtype.kind in ('U', 'S'): # str
+            def gen() -> tp.Iterator[str]:
+                yield from chars
+
+        elif dtype.kind == 'O': # object
+            def gen() -> tp.Iterator[tp.Any]:
+                yield None
+                yield True
+                yield False
+
+                gens = (cls.dtype_to_element_iter(np.dtype(int)),
+                        cls.dtype_to_element_iter(np.dtype(float)),
+                        cls.dtype_to_element_iter(np.dtype(str)),
+                        )
+
+                for i in range(cls.MAX_SIZE):
+                    for gen in gens:
+                        yield next(gen)
+
+        elif dtype.kind == 'M': # datetime64
+            def gen() -> tp.Iterator[np.datetime64]:
+                for v in ints:
+                    yield np.datetime64(v, np.datetime_data(dtype)[0])
+
+        elif dtype.kind == 'm': # timedelta64
+            def gen() -> tp.Iterator[np.datetime64]:
+                for v in ints:
+                    yield np.timedelta64(v, np.datetime_data(dtype)[0])
+
+        else:
+            raise NotImplementedError(f'no handling for {dtype}')
+
+        return gen()
+
+    @classmethod
+    def dtype_to_array(cls,
+            dtype: np.dtype,
+            count: int,
+            gen: tp.Optional[tp.Iterator[tp.Any]] = None,
+            ) -> np.ndarray:
+        '''
+        Args:
+            gen: optionally supply a generator of values
+        '''
+        if not gen:
+            gen = cls.dtype_to_element_iter(dtype)
+
+        if dtype.kind not in DTYPE_KINDS_NO_FROMITER:
+            array = np.fromiter(gen, count=count, dtype=dtype)
+        elif dtype.kind == 'O':
+            array = np.empty(shape=count, dtype=dtype) # object
+            for i, v in zip(range(len(array)), gen):
+                array[i] = v
+        else: # string typpes
+            array = np.array([next(gen) for _ in range(count)])
+
+        array.flags.writeable = False
+        return array
+
+    @classmethod
+    @lru_cache()
+    def dtype_spec_to_array(cls,
+            dtype_spec: DtypeSpecOrSpecs,
+            count: int,
+            ) -> np.ndarray:
+
+        if isinstance(dtype_spec, tuple):
+            # an object type of tuples
+            gen = zip(*(cls.dtype_to_element_iter(np.dtype(dts))
+                    for dts in dtype_spec))
+            return cls.dtype_to_array(DTYPE_OBJECT, count=count, gen=gen)
+
+        dtype = np.dtype(dtype_spec)
+        return dtype_to_array(dtype, count)
+
+
+
+
+class Builder:
+
+    @staticmethod
+    def build_index(
+            count: int,
+            constructor: ConstructorOrConstructors,
+            dtype_spec: DtypeSpecOrSpecs,
+            ) -> IndexTypes:
+
+        if isinstance(constructor, tuple):
+            # dtype_spec must be a tuple
+            if not isinstance(dtype_spec, tuple) or len(dtype_spec) < 2:
+                raise RuntimeError(f'for building IH dtype_spec must be a tuple')
+            if len(constructor) != len(dtype_spec):
+                raise RuntimeError(f'length of index_constructors must be the same as dtype_spec')
+
+            is_static = {c.STATIC for c in constructor}
+            assert len(is_static) == 1
+
+            cls = (sf.IndexHierarchy if is_static.pop()
+                    else sf.IndexHierarchyGO)
+
+            tb = sf.TypeBlocks.from_blocks(dtype_spec_to_array(dts, count=count)
+                    for dts in dtype_spec)
+
+            return cls._from_type_blocks(tb,
+                    index_constructors=constructor,
+                    own_blocks=True,
+                    )
+
+        # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
+        array = dtype_spec_to_array(dtype_spec, count=count)
+
+        return constructor.from_labels(array)
+
+    @staticmethod
+    def build_values(
+            shape: ShapeType,
+            dtype_specs: tp.Sequence[DtypeSpecOrSpecs]
+            ) -> 'TypeBlocks':
+
+        count_row, count_col = shape
+        count_dtype = len(dtype_specs)
+
+        def gen() -> tp.Iterator[np.ndarray]:
+            for col in range(count_col):
+                yield dtype_spec_to_array(
+                        dtype_specs[col % count_dtype],
+                        count=count_row,
+                        )
+        return sf.TypeBlocks.from_blocks(gen()).consolidate()
+
+
+    @staticmethod
+    def build_frame(index, columns, blocks, constructor) -> 'Frame':
+        return constructor(blocks,
+                index=index,
+                columns=columns,
+                own_data=True,
+                own_index=True,
+                own_columns=True,
+                )
+
+
+#-------------------------------------------------------------------------------
 class Fixture:
 
     TL_KEYS = {'f', 'i', 'c', 'v', 's'}
@@ -54,7 +300,6 @@ class Fixture:
                 np.dtype('datetime64[s]'),
                 np.dtype('datetime64[ns]'),
                 ):
-            # np.datetime_data(dt)
             key = f'dt{np.datetime_data(cls)[0]}'
             ref[key] = cls
 
