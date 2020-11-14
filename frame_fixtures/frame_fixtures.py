@@ -58,6 +58,7 @@ class SourceValues:
         if count > cls._COUNT:
             cls._COUNT = count * 2
 
+            # TODO: only generate difference and concat
             values_int = np.arange(cls._COUNT, dtype=np.int64)
             cls.shuffle(values_int)
             cls._INTS = values_int
