@@ -3,6 +3,8 @@ from types import ModuleType
 from collections import defaultdict
 import ast
 
+if tp.TYPE_CHECKING:
+    from static_frame import Frame # pylint: disable=W0611 #pragma: no cover
 
 
 StrToType = tp.Dict[str, tp.Type]
@@ -10,10 +12,12 @@ ConstructorType = tp.Tuple[tp.Union[str, tp.Tuple[str, ...]], ...]
 
 class Fixture:
 
+    TL_KEYS = {'f', 'i', 'c', 'v', 's'}
+
     @staticmethod
     def get_str_to_type(
-            module_sf: tp.Optional[ModuleType] = None,
-            module_np: tp.Optional[ModuleType] = None,
+            module_sf: tp.Optional[ModuleType],
+            module_np: tp.Optional[ModuleType],
             ) -> StrToType:
         if module_sf is None:
             import static_frame as sf
@@ -41,15 +45,36 @@ class Fixture:
                 module_sf.IndexNanosecond,
                 module_sf.IndexNanosecondGO,
                 ):
-            pass
+            key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
+            ref[key] = cls
 
+        for cls in (
+                module_np.dtype('datetime64[Y]'),
+                module_np.dtype('datetime64[M]'),
+                module_np.dtype('datetime64[D]'),
+                # NOTE: we not expose hour as IH is ambiguous
+                module_np.dtype('datetime64[s]'),
+                module_np.dtype('datetime64[ns]'),
+                ):
+            # np.datetime_data(dt)
+            key = f'dt{module_np.datetime_data(cls)[0]}'
+            ref[key] = cls
 
+        for cls in (
+                int,
+                float,
+                bool,
+                complex,
+                object,
+                ):
+            ref[cls.__name__] = cls
+
+        return ref
 
     @classmethod
-    def from_str(cls,
+    def dsl_to_constructors(cls,
             dsl: str,
-            str_to_type: StrToType = None,
-            ) -> 'Fixture':
+            ) -> ConstructorType:
 
         tree = ast.parse(dsl)
         bin_op_active = tree.body[0].value # this is as BinOp
@@ -80,12 +105,22 @@ class Fixture:
 
             constructors[key] = tuple(constructors[key])
 
+        if set(constructors.keys()) != cls.TL_KEYS:
+            raise SyntaxError(f'missing keys: {cls.TL_KEYS - constructors.keys()}')
+
+        return constructors
+
+    @classmethod
+    def to_frame(cls,
+            dsl: str,
+            module_sf: tp.Optional[ModuleType] = None,
+            module_np: tp.Optional[ModuleType] = None,
+            ) -> 'Frame':
+
+        str_to_type = cls.get_str_to_type(
+                module_sf=module_sf,
+                module_np=module_np,
+                )
+        constructors = cls.dsl_to_constructors(dsl)
         print(constructors)
-        return cls(constructors, str_to_type)
-
-
-    def __init__(self,
-            constructors: tp.Dict[str, ConstructorType],
-            str_to_type: StrToType = None,
-            ):
-        pass
+        import ipdb; ipdb.set_trace()
