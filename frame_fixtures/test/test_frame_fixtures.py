@@ -1,12 +1,7 @@
 
-import numpy as np
-import static_frame as sf
+# import numpy as np #type: ignore
+# import static_frame as sf #type: ignore
 from frame_fixtures.frame_fixtures import Fixture
-
-
-def get_str_to_type():
-    mapping = {}
-    mapping['F'] = sf.Frame
 
 
 
@@ -20,3 +15,10 @@ def test_parser_a() -> None:
 
 if __name__ == '__main__':
     test_parser_a()
+
+
+
+
+
+
+
