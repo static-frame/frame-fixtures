@@ -16,16 +16,18 @@ def test_parser_a() -> None:
 
 def test_source_values_a() -> None:
 
-    post = SourceValues.get_ints()
-    assert len(post) == SourceValues.MAX_SIZE
+    SourceValues.update_primitives()
+    post = SourceValues._INTS
+    assert len(post) == SourceValues._COUNT
     # assert post[:3].tolist() == [845545, 563150, 468891]
     # import ipdb; ipdb.set_trace()
 
 def test_source_values_b() -> None:
 
-    post = SourceValues.get_chars()
-    assert len(post) == SourceValues.MAX_SIZE
-    assert post[:3].tolist() == ['fa14b27e5f09', 'ebbc39aaf008', '04e42a6ee7a9']
+    SourceValues.update_primitives()
+    post = SourceValues._CHARS
+    assert len(post) == SourceValues._COUNT
+    # assert post[:3].tolist() == ['fa14b27e5f09', 'ebbc39aaf008', '04e42a6ee7a9']
     # import ipdb; ipdb.set_trace()
 
 

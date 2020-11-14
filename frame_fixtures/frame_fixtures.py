@@ -34,58 +34,53 @@ DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
 DTYPE_OBJECT = np.dtype(object)
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
+COUNT_INIT = 100_100
 
 class SourceValues:
-    MAX_SIZE = 100_000
-    SEED = 19
+    SEED = 22
 
-    _INTEGERS = None
+    _COUNT = 0
+    _INTS = None
     _CHARS = None
 
     @classmethod
     def shuffle(cls, mutable: np.ndarray) -> None:
+        state = np.random.get_state()
         np.random.seed(cls.SEED)
         np.random.shuffle(mutable)
+        np.random.set_state(state)
 
-        # state = random.getstate()
-        # random.seed(42)
-        # random.shuffle(mutable)
-        # random.setstate(state)
 
     @classmethod
-    def get_ints(cls) -> np.ndarray:
-        '''Return a fixed sequence of unique integers, of size equal to MAX_SIZE.
+    def update_primitives(cls, count: int = COUNT_INIT) -> None:
+        '''Update fixed sequences integers, characters.
         '''
-        if cls._INTEGERS is None:
-            values = np.arange(cls.MAX_SIZE, dtype=np.int64)
-            cls.shuffle(values)
-            cls._INTEGERS = values
+        if count > cls._COUNT:
+            cls._COUNT = count * 2
 
-        return cls._INTEGERS
+            values_int = np.arange(cls._COUNT, dtype=np.int64)
+            cls.shuffle(values_int)
+            cls._INTS = values_int
 
-    @classmethod
-    def get_chars(cls) -> tp.Sequence[str]:
+            values_char = np.empty(len(values_int), dtype='<U12')
 
-        if cls._CHARS is None:
-            values = np.empty(cls.MAX_SIZE, dtype='<U12')
-
-            for i in cls.get_ints():
-                h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+            h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+            for i in values_int:
                 h.update(str.encode(str(i)))
-                values[i] = h.hexdigest()
-            cls._CHARS = values
+                values_char[i] = h.hexdigest()
 
-        return cls._CHARS
-
+            cls._CHARS = values_char
 
     @classmethod
     def dtype_to_element_iter(cls,
             dtype: np.dtype,
+            count: int = COUNT_INIT,
             ) -> tp.Iterator[tp.Any]:
         # TODO: add a rotation or look ahead value
 
-        ints = cls.get_ints()
-        chars = cls.get_chars()
+        cls.update_primitives(count)
+        ints = cls._INTS
+        chars = cls._CHARS
 
         if dtype.kind == 'i': # int
             def gen() -> tp.Iterator[tp.Any]:
