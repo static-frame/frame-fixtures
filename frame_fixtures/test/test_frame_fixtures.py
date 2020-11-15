@@ -20,7 +20,12 @@ def test_source_values_a() -> None:
     post = SourceValues._INTS
     assert len(post) == SourceValues._COUNT
     # assert post[:3].tolist() == [845545, 563150, 468891]
-    # import ipdb; ipdb.set_trace()
+
+    SourceValues.update_primitives(200_000)
+    assert len(SourceValues._INTS) == 400_000
+
+    assert SourceValues._INTS[:4].tolist() ==  post[:4].tolist()
+
 
 def test_source_values_b() -> None:
 

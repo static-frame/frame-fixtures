@@ -34,7 +34,7 @@ DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
 DTYPE_OBJECT = np.dtype(object)
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
-COUNT_INIT = 100_100
+COUNT_INIT = 50_000 # will be doubled on first usage
 
 class SourceValues:
     SEED = 22
@@ -55,18 +55,22 @@ class SourceValues:
     def update_primitives(cls, count: int = COUNT_INIT) -> None:
         '''Update fixed sequences integers, characters.
         '''
+        count = max(count, COUNT_INIT)
         if count > cls._COUNT:
             cls._COUNT = count * 2
+            if cls._INTS is None:
+                values_int = np.arange(cls._COUNT, dtype=np.int64)
+                cls.shuffle(values_int)
+                cls._INTS = values_int
+            else:
+                values_ext = np.arange(len(cls._INTS), cls._COUNT, dtype=np.int64)
+                cls.shuffle(values_ext)
+                cls._INTS = np.concatenate((cls._INTS, values_ext))
 
-            # TODO: only generate difference and concat
-            values_int = np.arange(cls._COUNT, dtype=np.int64)
-            cls.shuffle(values_int)
-            cls._INTS = values_int
-
-            values_char = np.empty(len(values_int), dtype='<U12')
+            values_char = np.empty(len(cls._INTS), dtype='<U12')
 
             h = blake2b(digest_size=6) # gives 4214d8ebb6f8
-            for i in values_int:
+            for i in cls._INTS:
                 h.update(str.encode(str(i)))
                 values_char[i] = h.hexdigest()
 
