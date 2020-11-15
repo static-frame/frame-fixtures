@@ -78,6 +78,8 @@ def test_source_values_dtype_spec_to_array_a() -> None:
     b = SourceValues.dtype_spec_to_array((bool, str), shift=101, count=3).tolist()
     assert len(b) == 3
 
+    import ipdb; ipdb.set_trace()
+
 if __name__ == '__main__':
     test_parser_a()
 
