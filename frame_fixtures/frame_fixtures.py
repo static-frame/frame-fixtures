@@ -59,6 +59,7 @@ class SourceValues:
     _COUNT = 0
     _INTS = None
     _CHARS = None
+    _SIG_DIGITS = 12
 
     @classmethod
     def shuffle(cls, mutable: np.ndarray) -> None:
@@ -124,7 +125,11 @@ class SourceValues:
             def gen() -> tp.Iterator[tp.Any]:
                 yield np.nan
                 for v in ints:
-                    yield v * (-0.04 if v % 3 else 0.04)
+                    # round to avoid tiny floating-point noise
+                    if v % 3 == 0:
+                        yield round(v * -0.02, cls._SIG_DIGITS)
+                    else:
+                        yield round(v * 0.02, cls._SIG_DIGITS)
 
         elif dtype.kind == 'c': # complex
             def gen() -> tp.Iterator[tp.Any]:
@@ -178,12 +183,14 @@ class SourceValues:
         elif dtype.kind == 'M': # datetime64
             def gen() -> tp.Iterator[np.datetime64]:
                 for v in ints:
-                    yield np.datetime64(v, np.datetime_data(dtype)[0])
+                    # NOTE: numpy ints, can use astype
+                    yield v.astype(dtype)
+                    # yield np.datetime64(int(v), np.datetime_data(dtype)[0])
 
         elif dtype.kind == 'm': # timedelta64
             def gen() -> tp.Iterator[np.datetime64]:
                 for v in ints:
-                    yield np.timedelta64(v, np.datetime_data(dtype)[0])
+                    yield v.astype(dtype)
 
         else:
             raise NotImplementedError(f'no handling for {dtype}')
@@ -200,7 +207,8 @@ class SourceValues:
     @classmethod
     def dtype_to_array(cls,
             dtype: np.dtype,
-            count: int,
+            count: int = COUNT_INIT,
+            shift: int = 0,
             gen: tp.Optional[tp.Iterator[tp.Any]] = None,
             ) -> np.ndarray:
         '''
@@ -208,7 +216,11 @@ class SourceValues:
             gen: optionally supply a generator of values
         '''
         if not gen:
-            gen = cls.dtype_to_element_iter(dtype)
+            gen = cls.dtype_to_element_iter(
+                    dtype,
+                    count=count,
+                    shift=shift,
+                    )
 
         if dtype.kind not in DTYPE_KINDS_NO_FROMITER:
             array = np.fromiter(gen, count=count, dtype=dtype)
@@ -226,17 +238,24 @@ class SourceValues:
     @lru_cache()
     def dtype_spec_to_array(cls,
             dtype_spec: DtypeSpecOrSpecs,
-            count: int,
+            count: int = COUNT_INIT,
+            shift: int = 0,
             ) -> np.ndarray:
 
         if isinstance(dtype_spec, tuple):
             # an object type of tuples
-            gen = zip(*(cls.dtype_to_element_iter(np.dtype(dts))
+            gen = zip(*(cls.dtype_to_element_iter(
+                    np.dtype(dts), count=count, shift=shift)
                     for dts in dtype_spec))
-            return cls.dtype_to_array(DTYPE_OBJECT, count=count, gen=gen)
+            return cls.dtype_to_array(DTYPE_OBJECT,
+                    count=count,
+                    shift=shift,
+                    gen=gen)
 
-        dtype = np.dtype(dtype_spec)
-        return dtype_to_array(dtype, count)
+        return cls.dtype_to_array(np.dtype(dtype_spec),
+                count=count,
+                shift=shift,
+                )
 
 
 

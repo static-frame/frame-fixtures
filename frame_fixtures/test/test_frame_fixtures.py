@@ -50,14 +50,15 @@ def test_source_valuies_dtype_to_element_iter_a() -> None:
             np.dtype('c16'),
             np.dtype('?'),
             np.dtype('U'),
+            np.dtype('datetime64[D]'),
             np.dtype(object),
             ):
         gen = SourceValues.dtype_to_element_iter(dtype)
         print(dtype)
-        for i in range(5):
+        for i in range(10):
             print(next(gen))
 
-def test_source_valuies_dtype_to_element_iter_b() -> None:
+def test_source_values_dtype_to_element_iter_b() -> None:
         a = list(x for x, _ in zip(
                 SourceValues.dtype_to_element_iter(np.dtype('i')),
                 range(8),
@@ -67,6 +68,15 @@ def test_source_valuies_dtype_to_element_iter_b() -> None:
                 range(5),
                 ))
         assert a[3:] == b
+
+
+def test_source_values_dtype_spec_to_array_a() -> None:
+
+    a = SourceValues.dtype_spec_to_array(int, shift=101, count=3)
+    assert len(a) == 3
+
+    b = SourceValues.dtype_spec_to_array((bool, str), shift=101, count=3).tolist()
+    assert len(b) == 3
 
 if __name__ == '__main__':
     test_parser_a()
