@@ -32,9 +32,26 @@ IndexTypes = tp.Union['Index', 'IndexHierarchy']
 
 DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
 DTYPE_OBJECT = np.dtype(object)
+DTYPE_INT = np.dtype(int)
+DTYPE_FLOAT = np.dtype(float)
+DTYPE_STR = np.dtype(str)
+
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
 COUNT_INIT = 50_000 # will be doubled on first usage
+
+
+T = tp.TypeVar('T')
+
+def iter_shift(iter: tp.Iterator[T], count: int) -> tp.Iterator[T]:
+    store = []
+    for i, v in enumerate(iter):
+        if i < count:
+            store.append(v)
+            continue
+        yield v
+    yield from store
+
 
 class SourceValues:
     SEED = 22
@@ -50,6 +67,16 @@ class SourceValues:
         np.random.shuffle(mutable)
         np.random.set_state(state)
 
+    @staticmethod
+    def _ints_to_chars(array: np.ndarray) -> np.ndarray:
+        values_char = np.empty(len(array), dtype='<U12')
+
+        h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+        for i, v in enumerate(array):
+            h.update(str.encode(str(v)))
+            values_char[i] = h.hexdigest()
+
+        return values_char
 
     @classmethod
     def update_primitives(cls, count: int = COUNT_INIT) -> None:
@@ -58,30 +85,27 @@ class SourceValues:
         count = max(count, COUNT_INIT)
         if count > cls._COUNT:
             cls._COUNT = count * 2
+
             if cls._INTS is None:
                 values_int = np.arange(cls._COUNT, dtype=np.int64)
                 cls.shuffle(values_int)
                 cls._INTS = values_int
+                cls._CHARS = cls._ints_to_chars(cls._INTS)
             else:
                 values_ext = np.arange(len(cls._INTS), cls._COUNT, dtype=np.int64)
                 cls.shuffle(values_ext)
                 cls._INTS = np.concatenate((cls._INTS, values_ext))
-
-            values_char = np.empty(len(cls._INTS), dtype='<U12')
-
-            h = blake2b(digest_size=6) # gives 4214d8ebb6f8
-            for i in cls._INTS:
-                h.update(str.encode(str(i)))
-                values_char[i] = h.hexdigest()
-
-            cls._CHARS = values_char
+                cls._CHARS = np.concatenate((
+                        cls._CHARS,
+                        cls._ints_to_chars(values_ext),
+                        ))
 
     @classmethod
     def dtype_to_element_iter(cls,
             dtype: np.dtype,
             count: int = COUNT_INIT,
+            shift: int = 0,
             ) -> tp.Iterator[tp.Any]:
-        # TODO: add a rotation or look ahead value
 
         cls.update_primitives(count)
         ints = cls._INTS
@@ -94,19 +118,25 @@ class SourceValues:
 
         elif dtype.kind == 'u': # int unsigned
             def gen() -> tp.Iterator[tp.Any]:
-                yield from chain(ints[-1000:], ints[:-1000])
+                yield from iter_shift(ints, 100)
 
         elif dtype.kind == 'f': # float
             def gen() -> tp.Iterator[tp.Any]:
                 yield np.nan
                 for v in ints:
-                    yield v * (-0.02 if v % 3 else 0.02)
+                    yield v * (-0.04 if v % 3 else 0.04)
 
         elif dtype.kind == 'c': # complex
             def gen() -> tp.Iterator[tp.Any]:
                 for v, i in zip(
-                        cls.dtype_to_element_iter(np.dtype(float)),
-                        cls.dtype_to_element_iter(np.dtype(float)),
+                        cls.dtype_to_element_iter(
+                                DTYPE_FLOAT,
+                                count=count,
+                                ),
+                        cls.dtype_to_element_iter(
+                                DTYPE_FLOAT,
+                                count=count,
+                                shift=100),
                         ):
                     yield complex(v, i)
 
@@ -125,12 +155,23 @@ class SourceValues:
                 yield True
                 yield False
 
-                gens = (cls.dtype_to_element_iter(np.dtype(int)),
-                        cls.dtype_to_element_iter(np.dtype(float)),
-                        cls.dtype_to_element_iter(np.dtype(str)),
+                gens = (cls.dtype_to_element_iter(
+                                DTYPE_INT,
+                                count=count,
+                                shift=10,
+                                ),
+                        cls.dtype_to_element_iter(
+                                DTYPE_FLOAT,
+                                count=count,
+                                shift=100,
+                                ),
+                        cls.dtype_to_element_iter(
+                                DTYPE_STR,
+                                count=count,
+                                shift=50,
+                                ),
                         )
-
-                for i in range(cls.MAX_SIZE):
+                for i in range(cls._COUNT):
                     for gen in gens:
                         yield next(gen)
 
@@ -147,7 +188,14 @@ class SourceValues:
         else:
             raise NotImplementedError(f'no handling for {dtype}')
 
-        return gen()
+        if shift == 0:
+            return gen()
+
+        def shifted() -> tp.Iterator[tp.Any]:
+            yield from iter_shift(gen(), shift)
+
+        return shifted()
+
 
     @classmethod
     def dtype_to_array(cls,

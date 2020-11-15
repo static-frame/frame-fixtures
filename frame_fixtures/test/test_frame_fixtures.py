@@ -3,8 +3,12 @@ import numpy as np #type: ignore
 # import static_frame as sf #type: ignore
 from frame_fixtures.frame_fixtures import Fixture
 from frame_fixtures.frame_fixtures import SourceValues
+from frame_fixtures.frame_fixtures import iter_shift
 
-
+def test_iter_shift_a() -> None:
+    assert list(iter_shift(range(5), 3)) == [3, 4, 0, 1, 2]
+    assert list(iter_shift(range(5), 1)) == [1, 2, 3, 4, 0]
+    assert list(iter_shift(range(5), 10)) == list(range(5))
 
 def test_parser_a() -> None:
 
@@ -23,6 +27,7 @@ def test_source_values_a() -> None:
 
     SourceValues.update_primitives(200_000)
     assert len(SourceValues._INTS) == 400_000
+    assert len(SourceValues._CHARS) == 400_000
 
     assert SourceValues._INTS[:4].tolist() ==  post[:4].tolist()
 
@@ -44,11 +49,24 @@ def test_source_valuies_dtype_to_element_iter_a() -> None:
             np.dtype('f8'),
             np.dtype('c16'),
             np.dtype('?'),
+            np.dtype('U'),
+            np.dtype(object),
             ):
         gen = SourceValues.dtype_to_element_iter(dtype)
         print(dtype)
         for i in range(5):
             print(next(gen))
+
+def test_source_valuies_dtype_to_element_iter_b() -> None:
+        a = list(x for x, _ in zip(
+                SourceValues.dtype_to_element_iter(np.dtype('i')),
+                range(8),
+                ))
+        b = list(x for x, _ in zip(
+                SourceValues.dtype_to_element_iter(np.dtype('i'), shift=3),
+                range(5),
+                ))
+        assert a[3:] == b
 
 if __name__ == '__main__':
     test_parser_a()
