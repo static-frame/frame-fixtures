@@ -1,18 +1,19 @@
 import typing as tp
 from types import ModuleType
 import ast
-import random
 from itertools import chain
 from itertools import cycle
 from functools import lru_cache
 import string
 from hashlib import blake2b
+from itertools import permutations
+from itertools import chain
 
 import numpy as np #type: ignore
 
 if tp.TYPE_CHECKING:
     from static_frame import Frame #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.util import DtypeSpecifier
+    from static_frame.core.util import DtypeSpecifier #type: ignore
     from static_frame.core.container import ContainerOperand
     from static_frame import Index
     from static_frame import IndexHierarchy
@@ -38,44 +39,65 @@ DTYPE_STR = np.dtype(str)
 
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
-COUNT_INIT = 50_000 # will be doubled on first usage
-
+COUNT_INIT = 100_000 # will be doubled on first usage
 
 T = tp.TypeVar('T')
 
-def iter_shift(iter: tp.Iterator[T], count: int) -> tp.Iterator[T]:
-    store = []
+def iter_shift(iter: tp.Iterable[T],
+        count: int,
+        wrap: bool = False,
+        ) -> tp.Iterable[T]:
+    '''
+    If an array grows, wrapping will produce an order-dependent result.
+    '''
+    if wrap:
+        store = []
     for i, v in enumerate(iter):
         if i < count:
-            store.append(v)
+            if wrap:
+                store.append(v)
             continue
         yield v
-    yield from store
+    if wrap:
+        yield from store
 
 
 class SourceValues:
-    SEED = 22
-
+    _SEED = 22
     _COUNT = 0
-    _INTS = None
-    _CHARS = None
+    _INTS: tp.Optional[np.ndarray] = None
+    _CHARS: tp.Optional[np.ndarray] = None
     _SIG_DIGITS = 12
+
+    _LABEL_ALPHABET = permutations(
+            chain(reversed(string.ascii_lowercase),
+            string.ascii_uppercase,
+            string.digits), 4)
+    # 62 options in groups of 4 gives 13,388,280 permutations
 
     @classmethod
     def shuffle(cls, mutable: np.ndarray) -> None:
         state = np.random.get_state()
-        np.random.seed(cls.SEED)
+        np.random.seed(cls._SEED)
         np.random.shuffle(mutable)
         np.random.set_state(state)
 
-    @staticmethod
-    def _ints_to_chars(array: np.ndarray) -> np.ndarray:
-        values_char = np.empty(len(array), dtype='<U12')
+    @classmethod
+    def _ints_to_chars(cls,
+            array: np.ndarray,
+            offset: int = 0,
+            ) -> np.ndarray:
+        import time
+        t = time.time()
+        # values_char = np.empty(len(array), dtype='<U12')
+        # h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+        # for i, v in enumerate(array):
+        #     h.update(str.encode(str(v)))
+        #     values_char[i] = h.hexdigest()
 
-        h = blake2b(digest_size=6) # gives 4214d8ebb6f8
+        values_char = np.empty(len(array), dtype=f'<U4')
         for i, v in enumerate(array):
-            h.update(str.encode(str(v)))
-            values_char[i] = h.hexdigest()
+            values_char[v - offset] = ''.join(next(cls._LABEL_ALPHABET))
 
         return values_char
 
@@ -93,12 +115,13 @@ class SourceValues:
                 cls._INTS = values_int
                 cls._CHARS = cls._ints_to_chars(cls._INTS)
             else:
-                values_ext = np.arange(len(cls._INTS), cls._COUNT, dtype=np.int64)
+                offset = len(cls._INTS)
+                values_ext = np.arange(offset, cls._COUNT, dtype=np.int64)
                 cls.shuffle(values_ext)
                 cls._INTS = np.concatenate((cls._INTS, values_ext))
                 cls._CHARS = np.concatenate((
                         cls._CHARS,
-                        cls._ints_to_chars(values_ext),
+                        cls._ints_to_chars(values_ext, offset=offset),
                         ))
 
     @classmethod
@@ -109,8 +132,8 @@ class SourceValues:
             ) -> tp.Iterator[tp.Any]:
 
         cls.update_primitives(count)
-        ints = cls._INTS
-        chars = cls._CHARS
+        ints = tp.cast(np.ndarray, cls._INTS)
+        chars = tp.cast(np.ndarray, cls._CHARS)
 
         if dtype.kind == 'i': # int
             def gen() -> tp.Iterator[tp.Any]:
@@ -146,12 +169,12 @@ class SourceValues:
                     yield complex(v, i)
 
         elif dtype.kind == 'b': # boolean
-            def gen() -> tp.Iterator[bool]:
+            def gen() -> tp.Iterator[tp.Any]:
                 for v in ints:
                     yield v % 2 == 0
 
         elif dtype.kind in ('U', 'S'): # str
-            def gen() -> tp.Iterator[str]:
+            def gen() -> tp.Iterator[tp.Any]:
                 yield from chars
 
         elif dtype.kind == 'O': # object
@@ -181,14 +204,14 @@ class SourceValues:
                         yield next(gen)
 
         elif dtype.kind == 'M': # datetime64
-            def gen() -> tp.Iterator[np.datetime64]:
+            def gen() -> tp.Iterator[tp.Any]:
                 for v in ints:
                     # NOTE: numpy ints, can use astype
                     yield v.astype(dtype)
                     # yield np.datetime64(int(v), np.datetime_data(dtype)[0])
 
         elif dtype.kind == 'm': # timedelta64
-            def gen() -> tp.Iterator[np.datetime64]:
+            def gen() -> tp.Iterator[tp.Any]:
                 for v in ints:
                     yield v.astype(dtype)
 
