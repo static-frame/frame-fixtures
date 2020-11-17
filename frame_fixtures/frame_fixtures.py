@@ -20,18 +20,25 @@ if tp.TYPE_CHECKING:
     from static_frame import TypeBlocks
 
 StrToType = tp.Dict[str, tp.Type[tp.Any]]
-ConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
-ConstructorType = tp.Tuple[ConstructorArg, ...]
+StrConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
+StrConstructorType = tp.Tuple[StrConstructorArg, ...]
+StrConstructorsType = tp.Dict[str, StrConstructorType]
+
 
 ConstructorOrConstructors = tp.Union[
         tp.Type['ContainerOperand'],
         tp.Tuple[tp.Type['ContainerOperand'], ...]
         ]
+DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
+
+BuildElement = tp.Union[tp.Type['ContainerOperand'], 'DtypeSpecifier']
+BuildArg = tp.Union[BuildElement, tp.Tuple[BuildElement]]
+BuildType = tp.Tuple[BuildArg, ...]
+
 ShapeType = tp.Tuple[int, int]
 IndexTypes = tp.Union['Index', 'IndexHierarchy']
 
 
-DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
 DTYPE_OBJECT = np.dtype(object)
 DTYPE_INT = np.dtype(int)
 DTYPE_FLOAT = np.dtype(float)
@@ -41,6 +48,8 @@ DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
 COUNT_INIT = 100_000 # will be doubled on first usage
 
+
+#-------------------------------------------------------------------------------
 T = tp.TypeVar('T')
 
 def iter_shift(iter: tp.Iterable[T],
@@ -61,7 +70,61 @@ def iter_shift(iter: tp.Iterable[T],
     if wrap:
         yield from store
 
+def get_str_to_type(
+        module_sf: tp.Optional[ModuleType],
+        ) -> StrToType:
+    if module_sf is None:
+        import static_frame as sf
+        module_sf = sf
 
+    ref = {}
+    for cls in (
+            module_sf.TypeBlocks, #type: ignore
+            module_sf.Frame, #type: ignore
+            module_sf.FrameGO, #type: ignore
+            module_sf.Index, #type: ignore
+            module_sf.IndexGO, #type: ignore
+            module_sf.IndexHierarchy, #type: ignore
+            module_sf.IndexHierarchyGO, #type: ignore
+            module_sf.IndexYear, #type: ignore
+            module_sf.IndexYearGO, #type: ignore
+            module_sf.IndexYearMonth, #type: ignore
+            module_sf.IndexYearMonthGO, #type: ignore
+            module_sf.IndexDate, #type: ignore
+            module_sf.IndexDateGO, #type: ignore
+            module_sf.IndexSecond, #type: ignore
+            module_sf.IndexSecondGO, #type: ignore
+            module_sf.IndexNanosecond, #type: ignore
+            module_sf.IndexNanosecondGO, #type: ignore
+            ):
+        key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
+        ref[key] = cls
+
+    for cls in (
+            np.dtype('datetime64[Y]'),
+            np.dtype('datetime64[M]'),
+            np.dtype('datetime64[D]'),
+            # NOTE: we not expose hour as IH is ambiguous
+            np.dtype('datetime64[s]'),
+            np.dtype('datetime64[ns]'),
+            ):
+        key = f'dt{np.datetime_data(cls)[0]}'
+        ref[key] = cls
+
+    for cls in (
+            int,
+            str,
+            float,
+            bool,
+            complex,
+            object,
+            ):
+        ref[cls.__name__] = cls
+
+    return ref
+
+
+#-------------------------------------------------------------------------------
 class SourceValues:
     _SEED = 22
     _COUNT = 0
@@ -87,8 +150,7 @@ class SourceValues:
             array: np.ndarray,
             offset: int = 0,
             ) -> np.ndarray:
-        import time
-        t = time.time()
+
         # values_char = np.empty(len(array), dtype='<U12')
         # h = blake2b(digest_size=6) # gives 4214d8ebb6f8
         # for i, v in enumerate(array):
@@ -226,7 +288,6 @@ class SourceValues:
 
         return shifted()
 
-
     @classmethod
     def dtype_to_array(cls,
             dtype: np.dtype,
@@ -258,7 +319,7 @@ class SourceValues:
         return array
 
     @classmethod
-    @lru_cache()
+    @lru_cache(maxsize=128)
     def dtype_spec_to_array(cls,
             dtype_spec: DtypeSpecOrSpecs,
             count: int = COUNT_INIT,
@@ -283,8 +344,76 @@ class SourceValues:
 
 
 
-class Builder:
 
+
+    # @staticmethod
+    # def build_frame(index, columns, blocks, constructor) -> 'Frame':
+    #     return constructor(blocks,
+    #             index=index,
+    #             columns=columns,
+    #             own_data=True,
+    #             own_index=True,
+    #             own_columns=True,
+    #             )
+
+    # @classmethod
+    # def build(cls,
+    #         constructors: StrConstructorsType,
+    #         ) -> 'Frame':
+    #     shape = constructors['s']
+
+    #     import ipdb; ipdb.set_trace()
+
+
+
+
+#-------------------------------------------------------------------------------
+class Fixture:
+
+    TL_KEYS = {'f', 'i', 'c', 'v', 's'}
+
+    @classmethod
+    def dsl_to_str_constructors(cls,
+            dsl: str,
+            ) -> StrConstructorsType:
+
+        root = ast.parse(dsl).body[0]
+        assert isinstance(root, ast.Expr)
+        bin_op_active: ast.BinOp = tp.cast(ast.BinOp, root.value)
+
+        def parts() -> tp.Iterator[ast.Call]:
+            nonlocal bin_op_active
+            while True:
+                yield tp.cast(ast.Call, bin_op_active.right) # this is a Call object
+                if isinstance(bin_op_active.left, ast.Call):
+                    yield bin_op_active.left
+                    return
+                bin_op_active = tp.cast(ast.BinOp, bin_op_active.left)
+
+        constructors: StrConstructorsType = {}
+
+        for p in parts(): # each is a Call object
+            key = p.func.id #type: ignore
+
+            args: tp.List[StrConstructorArg] = []
+            for arg in p.args:
+                if isinstance(arg, ast.Tuple):
+                    args.append(tuple(sub.id for sub in arg.elts)) #type: ignore
+                elif isinstance(arg, ast.Name):
+                    args.append(arg.id)
+                elif isinstance(arg, ast.Constant):
+                    args.append(arg.value)
+                else:
+                    raise NotImplementedError(f'no handling for {arg}')
+
+            constructors[key] = tuple(args)
+
+        if set(constructors.keys()) != cls.TL_KEYS:
+            raise SyntaxError(f'missing keys: {cls.TL_KEYS - constructors.keys()}')
+
+        return constructors
+
+    #---------------------------------------------------------------------------
     @staticmethod
     def build_index(
             count: int,
@@ -305,7 +434,7 @@ class Builder:
             cls = (sf.IndexHierarchy if is_static.pop()
                     else sf.IndexHierarchyGO)
 
-            tb = sf.TypeBlocks.from_blocks(dtype_spec_to_array(dts, count=count)
+            tb = sf.TypeBlocks.from_blocks(SourceValues.dtype_spec_to_array(dts, count=count)
                     for dts in dtype_spec)
 
             return cls._from_type_blocks(tb,
@@ -314,136 +443,49 @@ class Builder:
                     )
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
-        array = dtype_spec_to_array(dtype_spec, count=count)
+        array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
 
         return constructor.from_labels(array)
 
     @staticmethod
-    def build_values(
+    def _build_type_blocks(
             shape: ShapeType,
-            dtype_specs: tp.Sequence[DtypeSpecOrSpecs]
+            dtype_specs: tp.Sequence[DtypeSpecOrSpecs],
+            str_to_type: StrToType,
             ) -> 'TypeBlocks':
 
         count_row, count_col = shape
         count_dtype = len(dtype_specs)
 
         def gen() -> tp.Iterator[np.ndarray]:
+            ints = SourceValues.dtype_to_array(DTYPE_INT, count=count_col)
+            max_shift = 100
+
             for col in range(count_col):
-                yield dtype_spec_to_array(
+                yield SourceValues.dtype_spec_to_array(
                         dtype_specs[col % count_dtype],
                         count=count_row,
+                        shift=ints[col] % max_shift
                         )
-        return sf.TypeBlocks.from_blocks(gen()).consolidate()
+        return str_to_type['TB'].from_blocks(gen()).consolidate()
 
-
-    @staticmethod
-    def build_frame(index, columns, blocks, constructor) -> 'Frame':
-        return constructor(blocks,
-                index=index,
-                columns=columns,
-                own_data=True,
-                own_index=True,
-                own_columns=True,
-                )
-
-
-#-------------------------------------------------------------------------------
-class Fixture:
-
-    TL_KEYS = {'f', 'i', 'c', 'v', 's'}
+    #---------------------------------------------------------------------------
 
     @staticmethod
-    def get_str_to_type(
-            module_sf: tp.Optional[ModuleType],
-            ) -> StrToType:
-        if module_sf is None:
-            import static_frame as sf
-            module_sf = sf
+    def _str_to_build(
+            constructor: StrConstructorType, # typle of elements or tuples
+            str_to_type: StrToType,
+            ) -> BuildType:
 
-        ref = {}
-        for cls in (
-                module_sf.Frame, #type: ignore
-                module_sf.FrameGO, #type: ignore
-                module_sf.Index, #type: ignore
-                module_sf.IndexGO, #type: ignore
-                module_sf.IndexHierarchy, #type: ignore
-                module_sf.IndexHierarchyGO, #type: ignore
-                module_sf.IndexYear, #type: ignore
-                module_sf.IndexYearGO, #type: ignore
-                module_sf.IndexYearMonth, #type: ignore
-                module_sf.IndexYearMonthGO, #type: ignore
-                module_sf.IndexDate, #type: ignore
-                module_sf.IndexDateGO, #type: ignore
-                module_sf.IndexSecond, #type: ignore
-                module_sf.IndexSecondGO, #type: ignore
-                module_sf.IndexNanosecond, #type: ignore
-                module_sf.IndexNanosecondGO, #type: ignore
-                ):
-            key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
-            ref[key] = cls
-
-        for cls in (
-                np.dtype('datetime64[Y]'),
-                np.dtype('datetime64[M]'),
-                np.dtype('datetime64[D]'),
-                # NOTE: we not expose hour as IH is ambiguous
-                np.dtype('datetime64[s]'),
-                np.dtype('datetime64[ns]'),
-                ):
-            key = f'dt{np.datetime_data(cls)[0]}'
-            ref[key] = cls
-
-        for cls in (
-                int,
-                float,
-                bool,
-                complex,
-                object,
-                ):
-            ref[cls.__name__] = cls
-
-        return ref
-
-    @classmethod
-    def dsl_to_constructors(cls,
-            dsl: str,
-            ) -> tp.Dict[str, ConstructorType]:
-
-        root = ast.parse(dsl).body[0]
-        assert isinstance(root, ast.Expr)
-        bin_op_active: ast.BinOp = tp.cast(ast.BinOp, root.value)
-
-        def parts() -> tp.Iterator[ast.Call]:
-            nonlocal bin_op_active
-            while True:
-                yield tp.cast(ast.Call, bin_op_active.right) # this is a Call object
-                if isinstance(bin_op_active.left, ast.Call):
-                    yield bin_op_active.left
-                    return
-                bin_op_active = tp.cast(ast.BinOp, bin_op_active.left)
-
-        constructors: tp.Dict[str, ConstructorType] = {}
-
-        for p in parts(): # each is a Call object
-            key = p.func.id #type: ignore
-
-            args: tp.List[ConstructorArg] = []
-            for arg in p.args:
-                if isinstance(arg, ast.Tuple):
-                    args.append(tuple(sub.id for sub in arg.elts)) #type: ignore
-                elif isinstance(arg, ast.Name):
-                    args.append(arg.id)
-                elif isinstance(arg, ast.Constant):
-                    args.append(arg.value)
+        def gen() -> tp.Iterator[BuildArg]:
+            for v in constructor:
+                if isinstance(v, tuple):
+                    yield tuple(str_to_type[part] for part in v)
                 else:
-                    raise NotImplementedError(f'no handling for {arg}')
+                    yield str_to_type[v]
 
-            constructors[key] = tuple(args)
+        return tuple(gen())
 
-        if set(constructors.keys()) != cls.TL_KEYS:
-            raise SyntaxError(f'missing keys: {cls.TL_KEYS - constructors.keys()}')
-
-        return constructors
 
     @classmethod
     def to_frame(cls,
@@ -451,13 +493,18 @@ class Fixture:
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
 
-        str_to_type = cls.get_str_to_type(
+        str_to_type = get_str_to_type(
                 module_sf=module_sf,
                 )
-        constructors = cls.dsl_to_constructors(dsl)
-        print(constructors)
+        constructors = cls.dsl_to_str_constructors(dsl)
+        shape = constructors['s']
+        tb = cls._build_type_blocks(
+                shape,
+                cls._str_to_build(constructors['v'], str_to_type),
+                str_to_type,
+                )
+        print(tb)
         # import ipdb; ipdb.set_trace()
-
 
 
 

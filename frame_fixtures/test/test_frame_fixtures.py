@@ -43,7 +43,7 @@ def test_source_values_b() -> None:
     # import ipdb; ipdb.set_trace()
 
 
-def test_source_valuies_dtype_to_element_iter_a() -> None:
+def test_source_valuis_dtype_to_element_iter_a() -> None:
 
     for dtype in (
             np.dtype('i'),
@@ -82,6 +82,19 @@ def test_source_values_dtype_spec_to_array_a() -> None:
 
     # SourceValues.update_primitives(10_000_000)
     # import ipdb; ipdb.set_trace()
+
+
+def test_fixture_to_frame_a() -> None:
+    msg = 'f(Fg)|i(I,str)|c(IDg,dtD)|v(float)'
+    msg = 'f(F)|i((I,I),(str,bool))|c((IN,I),(dtns,int))|v(str,bool,object)|s(10,10)'
+
+
+    from frame_fixtures.frame_fixtures import Fixture
+
+    f = Fixture.to_frame(msg)
+
+
+
 
 if __name__ == '__main__':
     test_parser_a()
