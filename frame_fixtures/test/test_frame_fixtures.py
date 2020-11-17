@@ -1,10 +1,14 @@
 
 import numpy as np #type: ignore
-# import static_frame as sf #type: ignore
+import pytest
+
+
 from frame_fixtures.frame_fixtures import Fixture
 from frame_fixtures.frame_fixtures import SourceValues
 from frame_fixtures.frame_fixtures import iter_shift
 from frame_fixtures.frame_fixtures import COUNT_INIT
+from frame_fixtures.frame_fixtures import Grammer
+from frame_fixtures.frame_fixtures import FrameFixtureSyntaxError
 
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
@@ -43,7 +47,7 @@ def test_source_values_b() -> None:
     # import ipdb; ipdb.set_trace()
 
 
-def test_source_valuis_dtype_to_element_iter_a() -> None:
+def test_source_values_dtype_to_element_iter_a() -> None:
 
     for dtype in (
             np.dtype('i'),
@@ -56,9 +60,8 @@ def test_source_valuis_dtype_to_element_iter_a() -> None:
             np.dtype(object),
             ):
         gen = SourceValues.dtype_to_element_iter(dtype)
-        print(dtype)
-        for i in range(10):
-            print(next(gen))
+        [next(gen) for x in range(10)]
+
 
 def test_source_values_dtype_to_element_iter_b() -> None:
         a = list(x for x, _ in zip(
@@ -84,15 +87,54 @@ def test_source_values_dtype_spec_to_array_a() -> None:
     # import ipdb; ipdb.set_trace()
 
 
+#-------------------------------------------------------------------------------
+def test_grammer_a() -> None:
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('f(a,b)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('i(a)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('i(a,b,c)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('c(a)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('c(a,b,c)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammer.dsl_to_str_constructors('x(a,b,c)|s(3,3)')
+
+#-------------------------------------------------------------------------------
+
+
+
 def test_fixture_to_frame_a() -> None:
-    msg = 'f(Fg)|i(I,str)|c(IDg,dtD)|v(float)'
-    msg = 'f(F)|i((I,I),(str,bool))|c((IN,I),(dtns,int))|v(str,bool,object)|s(10,10)'
+    msg1 = 'f(Fg)|i(I,str)|c(IDg,dtD)|v(float)|s(4,6)'
+    msg2 = 'f(F)|i((I,I),(str,bool))|c((IN,I),(dtns,int))|v(str,bool,object)|s(10,10)'
 
 
     from frame_fixtures.frame_fixtures import Fixture
 
-    f = Fixture.to_frame(msg)
+    f1 = Fixture.to_frame(msg1)
+    print(f1)
+    f2 = Fixture.to_frame(msg2)
 
+    # import ipdb; ipdb.set_trace()
+
+def test_fixture_to_frame_b() -> None:
+    f1 = Fixture.to_frame('s(2,2)')
+    assert f1.to_pairs(0) == ((0, ((0, 1930.4), (1, -1760.34))), (1, ((0, -610.8), (1, 3243.94))))
+
+def test_fixture_to_frame_c() -> None:
+    f1 = Fixture.to_frame('s(2,6)|c(IH,(str,int))')
+    print(f1)
 
 
 

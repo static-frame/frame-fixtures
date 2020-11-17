@@ -8,6 +8,7 @@ import string
 from hashlib import blake2b
 from itertools import permutations
 from itertools import chain
+from itertools import repeat
 
 import numpy as np #type: ignore
 
@@ -42,6 +43,7 @@ IndexTypes = tp.Union['Index', 'IndexHierarchy']
 DTYPE_OBJECT = np.dtype(object)
 DTYPE_INT = np.dtype(int)
 DTYPE_FLOAT = np.dtype(float)
+DTYPE_COMPLEX = np.dtype(complex)
 DTYPE_STR = np.dtype(str)
 
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
@@ -69,6 +71,14 @@ def iter_shift(iter: tp.Iterable[T],
         yield v
     if wrap:
         yield from store
+
+def take_count(iter: tp.Iterable[T],
+        count: int,
+        ) -> tp.Iterable[T]:
+    for _ in range(count):
+        yield next(iter)
+
+
 
 def get_str_to_type(
         module_sf: tp.Optional[ModuleType],
@@ -150,12 +160,6 @@ class SourceValues:
             array: np.ndarray,
             offset: int = 0,
             ) -> np.ndarray:
-
-        # values_char = np.empty(len(array), dtype='<U12')
-        # h = blake2b(digest_size=6) # gives 4214d8ebb6f8
-        # for i, v in enumerate(array):
-        #     h.update(str.encode(str(v)))
-        #     values_char[i] = h.hexdigest()
 
         values_char = np.empty(len(array), dtype=f'<U4')
         for i, v in enumerate(array):
@@ -261,16 +265,17 @@ class SourceValues:
                                 shift=50,
                                 ),
                         )
-                for i in range(cls._COUNT):
+                for i in ints:
                     for gen in gens:
-                        yield next(gen)
+                        # return at most 3 values from the gen
+                        yield from take_count(gen, (i % 3) + 1)
 
         elif dtype.kind == 'M': # datetime64
             def gen() -> tp.Iterator[tp.Any]:
                 for v in ints:
                     # NOTE: numpy ints, can use astype
-                    yield v.astype(dtype)
                     # yield np.datetime64(int(v), np.datetime_data(dtype)[0])
+                    yield v.astype(dtype)
 
         elif dtype.kind == 'm': # timedelta64
             def gen() -> tp.Iterator[tp.Any]:
@@ -341,54 +346,76 @@ class SourceValues:
                 shift=shift,
                 )
 
-
-
-
-
-
-    # @staticmethod
-    # def build_frame(index, columns, blocks, constructor) -> 'Frame':
-    #     return constructor(blocks,
-    #             index=index,
-    #             columns=columns,
-    #             own_data=True,
-    #             own_index=True,
-    #             own_columns=True,
-    #             )
-
-    # @classmethod
-    # def build(cls,
-    #         constructors: StrConstructorsType,
-    #         ) -> 'Frame':
-    #     shape = constructors['s']
-
-    #     import ipdb; ipdb.set_trace()
-
-
-
-
 #-------------------------------------------------------------------------------
-class Fixture:
 
-    TL_KEYS = {'f', 'i', 'c', 'v', 's'}
+class FrameFixtureSyntaxError(SyntaxError):
+    pass
+
+class Grammer:
+    FRAME = 'f'
+    INDEX = 'i'
+    COLUMNS = 'c'
+    VALUES = 'v'
+    SHAPE = 's'
+
+    KNOWN = {FRAME, INDEX, COLUMNS, VALUES, SHAPE}
+
+    ARG_COUNT_RANGE = {
+            FRAME: frozenset((0, 1)),
+            INDEX: frozenset((0, 2)),
+            COLUMNS: frozenset((0, 2)),
+            # VALUES can have any number of args
+            SHAPE: frozenset((2,)),
+            }
+
+    @classmethod
+    def validate(cls,
+            constructors: StrConstructorsType,
+            ):
+        if cls.SHAPE not in constructors:
+            raise FrameFixtureSyntaxError(f'missing required label: {cls.SHAPE}')
+
+        for token in constructors.keys():
+            if token in cls.ARG_COUNT_RANGE:
+                sizes = cls.ARG_COUNT_RANGE[token]
+                if len(constructors[token]) not in sizes:
+                    raise FrameFixtureSyntaxError(f'component {token} has invalid number of arguments: {len(constructors[token])} not in {sizes}')
+            elif token == cls.VALUES:
+                pass
+            else:
+                raise FrameFixtureSyntaxError(f'invalid token: {token}')
+
 
     @classmethod
     def dsl_to_str_constructors(cls,
             dsl: str,
             ) -> StrConstructorsType:
 
-        root = ast.parse(dsl).body[0]
-        assert isinstance(root, ast.Expr)
-        bin_op_active: ast.BinOp = tp.cast(ast.BinOp, root.value)
+        body = ast.parse(dsl).body
+        if len(body) != 1:
+            raise FrameFixtureSyntaxError('no tokens found')
 
-        def parts() -> tp.Iterator[ast.Call]:
-            nonlocal bin_op_active
-            while True:
-                yield tp.cast(ast.Call, bin_op_active.right) # this is a Call object
-                if isinstance(bin_op_active.left, ast.Call):
-                    yield bin_op_active.left
-                    return
-                bin_op_active = tp.cast(ast.BinOp, bin_op_active.left)
+        root = body[0]
+        assert isinstance(root, ast.Expr)
+
+        if isinstance(root.value, ast.BinOp):
+            bin_op_active: ast.BinOp = tp.cast(ast.BinOp, root.value)
+
+            def parts() -> tp.Iterator[ast.Call]:
+                nonlocal bin_op_active
+                while True:
+                    yield tp.cast(ast.Call, bin_op_active.right) # this is a Call object
+                    if isinstance(bin_op_active.left, ast.Call):
+                        yield bin_op_active.left
+                        return
+                    bin_op_active = tp.cast(ast.BinOp, bin_op_active.left)
+
+        elif isinstance(root.value, ast.Call):
+            def parts() -> tp.Iterator[ast.Call]:
+                yield root.value
+
+        else:
+            raise FrameFixtureSyntaxError(f'no support for token {root.value}')
 
         constructors: StrConstructorsType = {}
 
@@ -408,17 +435,19 @@ class Fixture:
 
             constructors[key] = tuple(args)
 
-        if set(constructors.keys()) != cls.TL_KEYS:
-            raise SyntaxError(f'missing keys: {cls.TL_KEYS - constructors.keys()}')
+        cls.validate(constructors) # will raise
 
         return constructors
 
-    #---------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+class Fixture:
+
     @staticmethod
-    def build_index(
+    def _build_index(
             count: int,
             constructor: ConstructorOrConstructors,
             dtype_spec: DtypeSpecOrSpecs,
+            str_to_type: StrToType,
             ) -> IndexTypes:
 
         if isinstance(constructor, tuple):
@@ -431,20 +460,19 @@ class Fixture:
             is_static = {c.STATIC for c in constructor}
             assert len(is_static) == 1
 
-            cls = (sf.IndexHierarchy if is_static.pop()
-                    else sf.IndexHierarchyGO)
+            builder = (str_to_type['IH'] if is_static.pop() else str_to_type['IHg'])
 
-            tb = sf.TypeBlocks.from_blocks(SourceValues.dtype_spec_to_array(dts, count=count)
+            tb = str_to_type['TB'].from_blocks(
+                    SourceValues.dtype_spec_to_array(dts, count=count)
                     for dts in dtype_spec)
 
-            return cls._from_type_blocks(tb,
+            return builder._from_type_blocks(tb,
                     index_constructors=constructor,
                     own_blocks=True,
                     )
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
         array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
-
         return constructor.from_labels(array)
 
     @staticmethod
@@ -470,22 +498,72 @@ class Fixture:
         return str_to_type['TB'].from_blocks(gen()).consolidate()
 
     #---------------------------------------------------------------------------
-
     @staticmethod
     def _str_to_build(
             constructor: StrConstructorType, # typle of elements or tuples
             str_to_type: StrToType,
             ) -> BuildType:
-
+        '''Convert strings to types or SF classes.
+        '''
         def gen() -> tp.Iterator[BuildArg]:
             for v in constructor:
                 if isinstance(v, tuple):
                     yield tuple(str_to_type[part] for part in v)
                 else:
                     yield str_to_type[v]
-
         return tuple(gen())
 
+    @classmethod
+    def _to_containers(cls,
+            constructors: StrConstructorsType,
+            str_to_type: StrToType,
+            ) -> tp.Tuple['TypeBlocks',
+                    tp.Optional[IndexTypes],
+                    tp.Optional[IndexTypes],
+                    ]:
+
+        shape = constructors['s']
+
+        if Grammer.VALUES not in constructors:
+            values_constructor = ('float',)
+        else:
+            values_constructor = constructors['v']
+        tb = cls._build_type_blocks(
+                shape,
+                cls._str_to_build(values_constructor, str_to_type),
+                str_to_type,
+                )
+
+        # must be two args
+        if 'i' in constructors and constructors['i']:
+            constructor, dtype_spec = cls._str_to_build(
+                    constructors['i'],
+                    str_to_type,
+                    )
+            index = cls._build_index(
+                    shape[0],
+                    constructor,
+                    dtype_spec,
+                    str_to_type,
+                    )
+        else:
+            index = None
+
+        if 'c' in constructors and constructors['c']:
+            constructor, dtype_spec = cls._str_to_build(
+                    constructors['c'],
+                    str_to_type,
+                    )
+            columns = cls._build_index(
+                    shape[1],
+                    constructor,
+                    dtype_spec,
+                    str_to_type,
+                    )
+        else:
+            columns = None
+
+        return tb, index, columns
 
     @classmethod
     def to_frame(cls,
@@ -496,15 +574,23 @@ class Fixture:
         str_to_type = get_str_to_type(
                 module_sf=module_sf,
                 )
-        constructors = cls.dsl_to_str_constructors(dsl)
-        shape = constructors['s']
-        tb = cls._build_type_blocks(
-                shape,
-                cls._str_to_build(constructors['v'], str_to_type),
-                str_to_type,
+        constructors = Grammer.dsl_to_str_constructors(dsl)
+
+        tb, index, columns = cls._to_containers(constructors, str_to_type)
+
+        if 'f' in constructors and constructors['f']:
+            # only one value
+            builder = cls._str_to_build(constructors['f'], str_to_type)[0]
+        else:
+            builder = str_to_type['F']
+
+        return builder(tb,
+                index=index,
+                columns=columns,
+                own_index=index is not None,
+                own_columns=columns is not None,
+                own_data=True,
                 )
-        print(tb)
-        # import ipdb; ipdb.set_trace()
 
 
 
