@@ -31,7 +31,7 @@ def test_source_values_a() -> None:
     assert len(SourceValues._INTS) == size * 2 #type: ignore
     assert len(SourceValues._CHARS) == size * 2 #type: ignore
 
-    assert SourceValues._INTS[:4].tolist() ==  post[:4].tolist() #type: ignore
+    assert SourceValues._INTS[:4].tolist() == post[:4].tolist() #type: ignore
 
 
 def test_source_values_b() -> None:
