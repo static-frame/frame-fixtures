@@ -12,9 +12,9 @@ if tp.TYPE_CHECKING:
     from static_frame import Frame #type: ignore #pylint: disable=W0611 #pragma: no cover
     from static_frame.core.util import DtypeSpecifier #type: ignore #pylint: disable=W0611 #pragma: no cover
     from static_frame.core.container import ContainerOperand #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame import Index #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame import IndexHierarchy #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame import TypeBlocks #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame import Index #pylint: disable=W0611 #pragma: no cover
+    from static_frame import IndexHierarchy #pylint: disable=W0611 #pragma: no cover
+    from static_frame import TypeBlocks #pylint: disable=W0611 #pragma: no cover
 
 
 StrToType = tp.Dict[str, tp.Type[tp.Any]]
@@ -69,9 +69,9 @@ def iter_shift(iter: tp.Iterable[T],
     if wrap:
         yield from store
 
-def take_count(iter: tp.Iterable[T],
+def take_count(iter: tp.Iterator[T],
         count: int,
-        ) -> tp.Iterable[T]:
+        ) -> tp.Iterator[T]:
     '''
     Return `count` values from the iterator.
     '''
@@ -210,8 +210,8 @@ class SourceValues:
             ) -> tp.Iterator[tp.Any]:
 
         cls.update_primitives(count)
-        ints = tp.cast(np.ndarray, cls._INTS)
-        chars = tp.cast(np.ndarray, cls._CHARS)
+        ints = cls._INTS
+        chars = cls._CHARS
 
         if dtype.kind == 'i': # int
             def gen() -> tp.Iterator[tp.Any]:
@@ -383,7 +383,7 @@ class Grammer:
     @classmethod
     def validate(cls,
             constructors: StrConstructorsType,
-            ):
+            ) -> None:
         if cls.SHAPE not in constructors:
             raise FrameFixtureSyntaxError(f'missing required label: {cls.SHAPE}')
 
@@ -411,7 +411,7 @@ class Grammer:
         assert isinstance(root, ast.Expr)
 
         if isinstance(root.value, ast.BinOp):
-            bin_op_active: ast.BinOp = tp.cast(ast.BinOp, root.value)
+            bin_op_active: ast.BinOp = root.value
 
             def parts() -> tp.Iterator[ast.Call]:
                 nonlocal bin_op_active
@@ -482,7 +482,7 @@ class Fixture:
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
 
-            gens = []
+            gens: tp.Iterator[tp.Any] = []
             for i, dts in enumerate(dtype_spec):
                 array = SourceValues.dtype_spec_to_array(dts, count=count, shift=10 * i)
                 gens.append(repeat_count(array, repeats[i]))

@@ -26,22 +26,22 @@ def test_source_values_a() -> None:
 
     SourceValues.update_primitives()
     post = SourceValues._INTS
-    assert len(post) == SourceValues._COUNT #type: ignore
+    assert len(post) == SourceValues._COUNT
     # assert post[:3].tolist() == [845545, 563150, 468891]
 
     size = COUNT_INIT * 2 + 1
     SourceValues.update_primitives(size)
-    assert len(SourceValues._INTS) == size * 2 #type: ignore
-    assert len(SourceValues._CHARS) == size * 2 #type: ignore
+    assert len(SourceValues._INTS) == size * 2
+    assert len(SourceValues._CHARS) == size * 2
 
-    assert SourceValues._INTS[:4].tolist() == post[:4].tolist() #type: ignore
+    assert SourceValues._INTS[:4].tolist() == post[:4].tolist()
 
 
 def test_source_values_b() -> None:
 
     SourceValues.update_primitives()
     post = SourceValues._CHARS
-    assert len(post) == SourceValues._COUNT #type: ignore
+    assert len(post) == SourceValues._COUNT
     # assert post[:3].tolist() == ['fa14b27e5f09', 'ebbc39aaf008', '04e42a6ee7a9']
     # import ipdb; ipdb.set_trace()
 
