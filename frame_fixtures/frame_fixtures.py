@@ -2,23 +2,20 @@ import typing as tp
 from types import ModuleType
 import ast
 from itertools import chain
-from itertools import cycle
 from functools import lru_cache
 import string
-from hashlib import blake2b
 from itertools import permutations
-from itertools import chain
-from itertools import repeat
 
 import numpy as np #type: ignore
 
 if tp.TYPE_CHECKING:
     from static_frame import Frame #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.util import DtypeSpecifier #type: ignore
-    from static_frame.core.container import ContainerOperand
-    from static_frame import Index
-    from static_frame import IndexHierarchy
-    from static_frame import TypeBlocks
+    from static_frame.core.util import DtypeSpecifier #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame.core.container import ContainerOperand #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame import Index #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame import IndexHierarchy #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame import TypeBlocks #type: ignore #pylint: disable=W0611 #pragma: no cover
+
 
 StrToType = tp.Dict[str, tp.Type[tp.Any]]
 StrConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
@@ -75,11 +72,25 @@ def iter_shift(iter: tp.Iterable[T],
 def take_count(iter: tp.Iterable[T],
         count: int,
         ) -> tp.Iterable[T]:
+    '''
+    Return `count` values from the iterator.
+    '''
     for _ in range(count):
         yield next(iter)
 
+def repeat_count(iter: tp.Iterable[T],
+        count: int,
+        ) -> tp.Iterable[T]:
+    '''
+    Repeat value from `iter` `count` times.
+    '''
+    if count <= 0:
+        raise ValueError(f'count {count} is <= 0')
+    for v in iter:
+        for _ in range(count):
+            yield v
 
-
+#-------------------------------------------------------------------------------
 def get_str_to_type(
         module_sf: tp.Optional[ModuleType],
         ) -> StrToType:
@@ -133,13 +144,14 @@ def get_str_to_type(
 
     return ref
 
+EMPTY_ARRAY = np.array(())
 
 #-------------------------------------------------------------------------------
 class SourceValues:
     _SEED = 22
     _COUNT = 0
-    _INTS: tp.Optional[np.ndarray] = None
-    _CHARS: tp.Optional[np.ndarray] = None
+    _INTS: np.ndarray = EMPTY_ARRAY
+    _CHARS: np.ndarray = EMPTY_ARRAY
     _SIG_DIGITS = 12
 
     _LABEL_ALPHABET = permutations(
@@ -175,7 +187,7 @@ class SourceValues:
         if count > cls._COUNT:
             cls._COUNT = count * 2
 
-            if cls._INTS is None:
+            if not len(cls._INTS):
                 values_int = np.arange(cls._COUNT, dtype=np.int64)
                 cls.shuffle(values_int)
                 cls._INTS = values_int
@@ -450,26 +462,36 @@ class Fixture:
             str_to_type: StrToType,
             ) -> IndexTypes:
 
-        if isinstance(constructor, tuple):
+        constructor_is_tuple = isinstance(constructor, tuple)
+
+        if constructor_is_tuple or issubclass(constructor, str_to_type['IH']):
             # dtype_spec must be a tuple
+
             if not isinstance(dtype_spec, tuple) or len(dtype_spec) < 2:
                 raise RuntimeError(f'for building IH dtype_spec must be a tuple')
-            if len(constructor) != len(dtype_spec):
-                raise RuntimeError(f'length of index_constructors must be the same as dtype_spec')
 
-            is_static = {c.STATIC for c in constructor}
-            assert len(is_static) == 1
+            if constructor_is_tuple:
+                if len(constructor) != len(dtype_spec):
+                    raise RuntimeError(f'length of index_constructors must be the same as dtype_spec')
+                is_static = {c.STATIC for c in constructor}
+                assert len(is_static) == 1
+                builder = (str_to_type['IH'] if is_static.pop() else str_to_type['IHg'])
+            else:
+                builder = constructor
 
-            builder = (str_to_type['IH'] if is_static.pop() else str_to_type['IHg'])
+            # depth of 3 will provide repeats of 4, 2, 1
+            repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
 
-            tb = str_to_type['TB'].from_blocks(
-                    SourceValues.dtype_spec_to_array(dts, count=count)
-                    for dts in dtype_spec)
+            gens = []
+            for i, dts in enumerate(dtype_spec):
+                array = SourceValues.dtype_spec_to_array(dts, count=count, shift=10 * i)
+                gens.append(repeat_count(array, repeats[i]))
 
-            return builder._from_type_blocks(tb,
-                    index_constructors=constructor,
-                    own_blocks=True,
-                    )
+            def labels() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
+                for _ in range(count):
+                    yield tuple(next(x) for x in gens)
+
+            return builder.from_labels(labels())
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
         array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
@@ -591,12 +613,6 @@ class Fixture:
                 own_columns=columns is not None,
                 own_data=True,
                 )
-
-
-
-
-
-
 
 
 
