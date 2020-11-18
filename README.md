@@ -1,2 +1,2 @@
 # frame-fixtures
-A Micro DSL for creating StaticFrame Fixtures
+Compact expressions for creating DataFrame fixtures.
