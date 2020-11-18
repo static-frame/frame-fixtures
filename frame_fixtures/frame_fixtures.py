@@ -424,7 +424,7 @@ class Grammer:
 
         elif isinstance(root.value, ast.Call):
             def parts() -> tp.Iterator[ast.Call]:
-                yield root.value
+                yield root.value #type: ignore
 
         else:
             raise FrameFixtureSyntaxError(f'no support for token {root.value}')
@@ -443,7 +443,7 @@ class Grammer:
                 elif isinstance(arg, ast.Constant): # python 3.8
                     args.append(arg.value)
                 elif isinstance(arg, ast.Num): # pre python 3.8
-                    args.append(arg.n)
+                    args.append(arg.n) #type: ignore
                 else:
                     raise NotImplementedError(f'no handling for {arg}')
 
@@ -466,25 +466,25 @@ class Fixture:
 
         constructor_is_tuple = isinstance(constructor, tuple)
 
-        if constructor_is_tuple or issubclass(constructor, str_to_type['IH']):
+        if constructor_is_tuple or issubclass(constructor, str_to_type['IH']): #type: ignore
             # dtype_spec must be a tuple
 
             if not isinstance(dtype_spec, tuple) or len(dtype_spec) < 2:
                 raise RuntimeError(f'for building IH dtype_spec must be a tuple')
 
             if constructor_is_tuple:
-                if len(constructor) != len(dtype_spec):
+                if len(constructor) != len(dtype_spec): #type: ignore
                     raise RuntimeError(f'length of index_constructors must be the same as dtype_spec')
                 is_static = {c.STATIC for c in constructor}
                 assert len(is_static) == 1
-                builder = (str_to_type['IH'] if is_static.pop() else str_to_type['IHg'])
+                builder = str_to_type['IH'] if is_static.pop() else str_to_type['IHg']
             else:
-                builder = constructor
+                builder = constructor #type: ignore
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
 
-            gens: tp.Iterator[tp.Any] = []
+            gens: tp.List[tp.Any] = []
             for i, dts in enumerate(dtype_spec):
                 array = SourceValues.dtype_spec_to_array(dts, count=count, shift=10 * i)
                 gens.append(repeat_count(array, repeats[i]))
@@ -497,7 +497,7 @@ class Fixture:
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
         array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
-        return constructor.from_labels(array)
+        return constructor.from_labels(array) #type: ignore
 
     @staticmethod
     def _build_type_blocks(
@@ -546,12 +546,12 @@ class Fixture:
                     tp.Optional[IndexTypes],
                     ]:
 
-        shape = constructors['s']
+        shape: ShapeType = tp.cast(ShapeType, constructors['s'])
 
         if Grammer.VALUES not in constructors:
             values_constructor = ('float',)
         else:
-            values_constructor = constructors['v']
+            values_constructor = constructors['v'] #type: ignore
         tb = cls._build_type_blocks(
                 shape,
                 cls._str_to_build(values_constructor, str_to_type),
@@ -603,12 +603,11 @@ class Fixture:
         tb, index, columns = cls._to_containers(constructors, str_to_type)
 
         if 'f' in constructors and constructors['f']:
-            # only one value
             builder = cls._str_to_build(constructors['f'], str_to_type)[0]
         else:
             builder = str_to_type['F']
 
-        return builder(tb,
+        return builder(tb, #type: ignore
                 index=index,
                 columns=columns,
                 own_index=index is not None,

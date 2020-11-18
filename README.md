@@ -1,2 +1,2 @@
 # frame-fixtures
-Compact expressions for creating DataFrame fixtures.
+Compact expressions for DataFrame fixtures with StaticFrame.

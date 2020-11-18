@@ -1,7 +1,7 @@
 import datetime
 
 import numpy as np #type: ignore
-import pytest
+import pytest #type: ignore
 
 from frame_fixtures.frame_fixtures import Fixture
 from frame_fixtures.frame_fixtures import SourceValues

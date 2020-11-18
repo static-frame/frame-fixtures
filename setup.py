@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup #type: ignore
 from codecs import open
 from os import path
 import typing as tp
@@ -64,7 +64,7 @@ def get_extras_require() -> tp.Dict[str, tp.List[str]]:
 setup(
     name='frame-fixtures',
     version=get_version(),
-    description='Compact expressions for creating DataFrame fixtures',
+    description='Compact expressions for DataFrame fixtures with StaticFrame',
     # long_description=get_long_description(),
     python_requires='>3.6.0',
     install_requires=list(get_install_requires()),
