@@ -440,7 +440,7 @@ class Grammer:
                     args.append(tuple(sub.id for sub in arg.elts)) #type: ignore
                 elif isinstance(arg, ast.Name):
                     args.append(arg.id)
-                elif isinstance(arg, ast.Constant):
+                elif isinstance(arg, (ast.Constant, ast.Num)):
                     args.append(arg.value)
                 else:
                     raise NotImplementedError(f'no handling for {arg}')
