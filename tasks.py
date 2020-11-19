@@ -49,12 +49,17 @@ def mypy(context):
     '''
     context.run('mypy --strict')
 
-
 @invoke.task
 def lint(context):
     '''Run pylint static analysis.
     '''
     context.run('pylint frame_fixtures')
+
+@invoke.task(pre=(lint, mypy))
+def quality(context):
+    '''Run quality checks.
+    '''
+    pass
 
 #-------------------------------------------------------------------------------
 
