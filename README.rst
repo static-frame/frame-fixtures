@@ -27,12 +27,12 @@ Packages: https://pypi.org/project/frame-fixtures
 Installation
 -------------------------------
 
-Install FrameFixtures via PIP:
+Install FrameFixtures via PIP::
 
     pip install frame-fixtures [extras]
 
 
-The ``[extras]`` configuration includes StaticFrame as a requirement. As StaticFrame uses FrameFixtures, installation without ``[extras]`` assumes the availability of StaticFrame.
+The ``[extras]`` configuration includes StaticFrame as a requirement. As StaticFrame uses FrameFixtures, installation without ``[extras]`` assumes the availability of StaticFrame::
 
     pip install frame-fixtures
 
