@@ -18,22 +18,22 @@ import typing as tp
 
 ROOT_DIR_FP = path.abspath(path.dirname(__file__))
 
-# def get_long_description() -> str:
-#     with open(path.join(ROOT_DIR_FP, 'README.rst'), encoding='utf-8') as f:
-#         msg = []
-#         collect = False
-#         start = -1
-#         for i, line in enumerate(f):
-#             if line.startswith('static-frame'):
-#                 start = i + 2 # skip this line and the next
-#             if i == start:
-#                 collect = True
-#             if line.startswith('Installation'):
-#                 collect = False
-#             if collect:
-#                 msg.append(line)
+def get_long_description() -> str:
+    with open(path.join(ROOT_DIR_FP, 'README.rst'), encoding='utf-8') as f:
+        msg = []
+        collect = False
+        start = -1
+        for i, line in enumerate(f):
+            if line.startswith('frame-fixtures'):
+                start = i + 2 # skip this line and the next
+            if i == start:
+                collect = True
+            # if line.startswith('Installation'):
+            #     collect = False
+            if collect:
+                msg.append(line)
 
-#     return ''.join(msg).strip()
+    return ''.join(msg).strip()
 
 
 def get_version() -> str:
@@ -64,8 +64,8 @@ def get_extras_require() -> tp.Dict[str, tp.List[str]]:
 setup(
     name='frame-fixtures',
     version=get_version(),
-    description='Compact expressions for DataFrame fixtures with StaticFrame',
-    # long_description=get_long_description(),
+    description='Use compact expressions to create diverse, deterministic DataFrame fixtures with StaticFrame',
+    long_description=get_long_description(),
     python_requires='>3.6.0',
     install_requires=list(get_install_requires()),
     extras_require=get_extras_require(),
