@@ -3,13 +3,13 @@ import datetime
 import numpy as np #type: ignore
 import pytest #type: ignore
 
-from frame_fixtures.frame_fixtures import Fixture
-from frame_fixtures.frame_fixtures import SourceValues
-from frame_fixtures.frame_fixtures import iter_shift
-from frame_fixtures.frame_fixtures import COUNT_INIT
-from frame_fixtures.frame_fixtures import Grammer
-from frame_fixtures.frame_fixtures import FrameFixtureSyntaxError
-from frame_fixtures.frame_fixtures import repeat_count
+from frame_fixtures.core import Fixture
+from frame_fixtures.core import SourceValues
+from frame_fixtures.core import iter_shift
+from frame_fixtures.core import COUNT_INIT
+from frame_fixtures.core import Grammer
+from frame_fixtures.core import FrameFixtureSyntaxError
+from frame_fixtures.core import repeat_count
 
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
