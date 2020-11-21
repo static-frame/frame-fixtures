@@ -68,7 +68,7 @@ The same ``Frame`` can be converted to Pandas:
 3  zB7E  zuVU   True  3338.48  zS6w  zDVQ  False  3442.84
 
 
-Create a 10 by 4 ``Frame`` of objects and complex numbers with two-level index of string, date and a one-level column of strings.
+Create a 10 by 3 ``Frame`` of objects and complex numbers with two-level index of string, date and a one-level column of strings.
 
 >>> ff.Fixture.to_frame('v(object,complex)|i(IH,(str,dtD))|c(I,str)|s(10,4)')
 <Frame>
