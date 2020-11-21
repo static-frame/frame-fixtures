@@ -5,6 +5,10 @@
 .. image:: https://img.shields.io/pypi/v/frame-fixtures.svg
   :target: https://pypi.org/project/frame-fixtures
 
+.. image:: https://img.shields.io/codecov/c/github/InvestmentSystems/frame-fixtures.svg
+  :target: https://codecov.io/gh/InvestmentSystems/frame-fixtures
+
+
 .. image:: https://github.com/InvestmentSystems/frame-fixtures/workflows/Test/badge.svg
   :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3ATest
 

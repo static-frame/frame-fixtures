@@ -143,7 +143,13 @@ def test_import() -> None:
     assert f1.to_pairs(0) == ((0, (('zZbu', 1930.4), ('ztsv', -1760.34))), (1, (('zZbu', -610.8), ('ztsv', 3243.94))))
 
 
-
-
 #-------------------------------------------------------------------------------
+def test_grammar_definition() -> None:
+    cc = GrammarDoc.container_components()
+    cc = GrammarDoc.specifiers_constructor()
+    cc = GrammarDoc.specifiers_dtype()
+
+
+
+
 
