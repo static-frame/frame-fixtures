@@ -96,7 +96,7 @@ zZbu       105269     zDVQ        False  False   True  False
                       zS6w         True  False   True   True
 
 
-FrameFixtures supports defining features unique to StaticFrame, such as specifying a grow-only ``FrameGO``, ``Index`` types within ``IndexHierarchy``, and usage of ``np.datetime64`` types other than nanoseconds. These specifications are not directly convertible to Pandas.
+FrameFixtures support defining features unique to StaticFrame, such as specifying a grow-only ``FrameGO``, ``Index`` types within ``IndexHierarchy``, and usage of ``np.datetime64`` types other than nanoseconds. These specifications are not directly convertible to Pandas.
 
 >>> ff.Fixture.to_frame('f(Fg)|v(int,bool,str)|i((IY,ID),(dtY,dtD))|c(ISg,dts)|s(6,2)')
 <FrameGO>
@@ -139,7 +139,7 @@ A FrameFixture is defined by specifying one or more container components using s
 Constructor Specifiers
 .............................
 
-CSs are given to the `f` CC; the `i` and `c` CC take one or many CSs as their first argument.
+CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as their first argument.
 
 +-------+-----------------+
 |Symbol |cls              |
@@ -184,7 +184,7 @@ CSs are given to the `f` CC; the `i` and `c` CC take one or many CSs as their fi
 Dtype Specifiers
 .............................
 
-DSs are given to the `v` CC, and are used repeatedly to fill all columns; the `i` and `c` CC take one or many DSs as their second argument.
+DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the ``i`` and ``c`` CC take one or many DSs as their second argument.
 
 
 +-----------+--------------------------+
