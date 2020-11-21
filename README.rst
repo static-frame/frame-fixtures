@@ -119,25 +119,27 @@ Grammar
 Container Components
 .............................
 
-A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components are given arguments using Python function call syntax, and multiple container components are delimited with ``|``. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``. Component symbols, whether components are required, and the number of required arguments, is summarized below.
+A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components (CCs) are given arguments using Python function call syntax, and multiple CCs are delimited with ``|``. The shape CC takes ints as arguments; all other CCs take Constructor Specifiers (CS) and/or Dtype Specifiers (DS) as arguments. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``, where 100 and 20 define the row and column counts, and `I` is the CC and `str` is the DS. Component symbols, whether components are required, and the number of required arguments, is summarized below.
 
-+-------+----------+---------+---------+
-|Symbol |Component |Required |Arguments|
-+=======+==========+=========+=========+
-|f      |Frame     |False    |1        |
-+-------+----------+---------+---------+
-|i      |Index     |False    |2        |
-+-------+----------+---------+---------+
-|c      |Columns   |False    |2        |
-+-------+----------+---------+---------+
-|v      |Values    |False    |nan      |
-+-------+----------+---------+---------+
-|s      |Shape     |True     |2        |
-+-------+----------+---------+---------+
++-------+----------+---------+----------+----------------------------------+
+|Symbol |Component |Required |Arguments |Signature                         |
++=======+==========+=========+==========+==================================+
+|f      |Frame     |False    |1         |(CS,)                             |
++-------+----------+---------+----------+----------------------------------+
+|i      |Index     |False    |2         |(CS, DS) or ((CS, ...), (DS, ...))|
++-------+----------+---------+----------+----------------------------------+
+|c      |Columns   |False    |2         |(CS, DS) or ((CS, ...), (DS, ...))|
++-------+----------+---------+----------+----------------------------------+
+|v      |Values    |False    |unbound   |(DS, ...)                         |
++-------+----------+---------+----------+----------------------------------+
+|s      |Shape     |True     |2         |(int, int)                        |
++-------+----------+---------+----------+----------------------------------+
 
 
 Constructor Specifiers
 .............................
+
+CSs are given to the `f` CC; the `i` and `c` CC take one or many CSs as their first argument.
 
 +-------+-----------------+
 |Symbol |cls              |
@@ -179,8 +181,11 @@ Constructor Specifiers
 
 
 
-dtype Specifiers
+Dtype Specifiers
 .............................
+
+DSs are given to the `v` CC, and are used repeatedly to fill all columns; the `i` and `c` CC take one or many DSs as their second argument.
+
 
 +-----------+--------------------------+
 |Symbol     |Class                     |

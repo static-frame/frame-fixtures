@@ -148,18 +148,18 @@ def test_import() -> None:
 #-------------------------------------------------------------------------------
 def test_grammar_definition() -> None:
     import static_frame as sf #type: ignore
-
+    config = sf.DisplayConfig(include_index=False, type_show=False, cell_max_width=40)
     # container components
     cc = GrammarDoc.container_components()
-    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False)))
+    # print(cc.to_rst(config))
 
     # container types
-    cc = GrammarDoc.specifiers_constructor()
-    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False)))
+    # cc = GrammarDoc.specifiers_constructor()
+    # print(cc.to_rst(config))
 
-    # container types
-    cc = GrammarDoc.specifiers_dtype()
-    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False, cell_max_width=40)))
+    # # container types
+    # cc = GrammarDoc.specifiers_dtype()
+    # print(cc.to_rst(config))
 
 
 

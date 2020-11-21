@@ -414,6 +414,13 @@ class Grammar:
             SHAPE: frozenset((2,)),
             }
 
+    SIGNATURES = {
+            FRAME: '(CS,)',
+            INDEX: '(CS, DS) or ((CS, ...), (DS, ...))',
+            COLUMNS: '(CS, DS) or ((CS, ...), (DS, ...))',
+            VALUES: '(DS, ...)',
+            SHAPE: '(int, int)',
+            }
 
 
     @classmethod
@@ -503,13 +510,14 @@ class GrammarDoc:
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for arg, label in Grammar.KNOWN.items():
                 not_required = arg not in Grammar.ARG_COUNT or 0 in Grammar.ARG_COUNT[arg]
-                arguments = max(Grammar.ARG_COUNT.get(arg, (np.nan,)))
-                yield (arg, label, not not_required, arguments)
+                arguments = max(Grammar.ARG_COUNT.get(arg, ('unbound',)))
+                sig = str(Grammar.SIGNATURES[arg])
+                yield (arg, label, not not_required, arguments, sig)
 
         f = str_to_type['F'].from_records(
                 records(),
-                columns=('Symbol', 'Component', 'Required', 'Arguments'),
-                dtypes=(str, str, bool, object),
+                columns=('Symbol', 'Component', 'Required', 'Arguments', 'Signature'),
+                dtypes=(str, str, bool, object, str),
                 )
         return f
 
