@@ -147,7 +147,7 @@ def test_import() -> None:
 
 #-------------------------------------------------------------------------------
 def test_grammar_definition() -> None:
-    import static_frame as sf
+    import static_frame as sf #type: ignore
 
     # container components
     cc = GrammarDoc.container_components()

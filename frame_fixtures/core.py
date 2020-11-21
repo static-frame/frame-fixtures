@@ -481,7 +481,7 @@ class GrammarDoc:
             ) -> 'Frame':
         str_to_type = get_str_to_type(module_sf)
 
-        def records():
+        def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for arg, label in Grammar.KNOWN.items():
                 not_required = arg not in Grammar.ARG_COUNT or 0 in Grammar.ARG_COUNT[arg]
                 arguments = max(Grammar.ARG_COUNT.get(arg, (np.nan,)))
