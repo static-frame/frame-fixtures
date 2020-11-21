@@ -118,6 +118,7 @@ Grammar
 
 A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components are given arguments using Python function call syntax, and multiple container components are delimited with ``|``. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``. Whether components are required, and the number of required arguments, is summarized below.
 
++-------+----------+---------+---------+
 |Symbol |Component |Required |Arguments|
 +=======+==========+=========+=========+
 |f      |Frame     |False    |1        |
