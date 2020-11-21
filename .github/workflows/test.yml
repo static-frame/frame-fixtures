@@ -26,4 +26,12 @@ jobs:
         pip install -r requirements-test.txt
 
     - name: Invoke Test
-      run: inv test
+      run: inv test --cov
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: coverage.xml
+        fail_ci_if_error: true
+        path_to_write_report: .coverage/codecov_report.gz
+        verbose: true

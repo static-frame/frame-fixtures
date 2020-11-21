@@ -142,10 +142,8 @@ Constructor Specifiers
 CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as their first argument.
 
 +-------+-----------------+
-|Symbol |cls              |
+|Symbol |Class            |
 +=======+=================+
-|TB     |TypeBlocks       |
-+-------+-----------------+
 |F      |Frame            |
 +-------+-----------------+
 |Fg     |FrameGO          |
@@ -178,6 +176,7 @@ CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as th
 +-------+-----------------+
 |INg    |IndexNanosecondGO|
 +-------+-----------------+
+
 
 
 

@@ -10,6 +10,8 @@ import invoke
 def clean(context):
     '''Clean doc and build artifacts
     '''
+    context.run('rm -rf .coverage')
+    context.run('rm -rf coverage.xml')
     context.run('rm -rf htmlcov')
     context.run('rm -rf build')
     context.run('rm -rf dist')
@@ -22,13 +24,36 @@ def clean(context):
 #-------------------------------------------------------------------------------
 
 @invoke.task
-def test(context, unit=False, filename=None):
+def test(context,
+        unit=False,
+        cov=False,):
     '''Run tests.
     '''
 
     cmd = f'pytest -s --color no --disable-pytest-warnings --tb=native frame_fixtures'
+    if cov:
+        cmd += ' --cov=frame_fixtures --cov-report=xml'
     print(cmd)
     context.run(cmd)
+
+@invoke.task
+def grammar(context):
+    from frame_fixtures.core import GrammarDoc
+    import static_frame as sf #type: ignore
+
+    config = sf.DisplayConfig(include_index=False, type_show=False, cell_max_width=40)
+    # container components
+    cc = GrammarDoc.container_components()
+    print(cc.to_rst(config))
+
+    # container types
+    cc = GrammarDoc.specifiers_constructor()
+    print(cc.to_rst(config))
+
+    # container types
+    cc = GrammarDoc.specifiers_dtype()
+    print(cc.to_rst(config))
+
 
 
 @invoke.task

@@ -529,6 +529,8 @@ class GrammarDoc:
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for k, v in get_str_to_constructor(module_sf).items():
+                if k == 'TB':
+                    continue
                 yield k, v.__name__
 
         f = str_to_type['F'].from_records(
