@@ -7,7 +7,9 @@ from frame_fixtures.core import Fixture
 from frame_fixtures.core import SourceValues
 from frame_fixtures.core import iter_shift
 from frame_fixtures.core import COUNT_INIT
-from frame_fixtures.core import Grammer
+from frame_fixtures.core import Grammar
+from frame_fixtures.core import GrammarDoc
+
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
 
@@ -90,25 +92,25 @@ def test_source_values_dtype_spec_to_array_a() -> None:
 def test_grammer_a() -> None:
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('')
+        Grammar.dsl_to_str_constructors('')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('f(a,b)|s(3,3)')
+        Grammar.dsl_to_str_constructors('f(a,b)|s(3,3)')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('i(a)|s(3,3)')
+        Grammar.dsl_to_str_constructors('i(a)|s(3,3)')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('i(a,b,c)|s(3,3)')
+        Grammar.dsl_to_str_constructors('i(a,b,c)|s(3,3)')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('c(a)|s(3,3)')
+        Grammar.dsl_to_str_constructors('c(a)|s(3,3)')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('c(a,b,c)|s(3,3)')
+        Grammar.dsl_to_str_constructors('c(a,b,c)|s(3,3)')
 
     with pytest.raises(FrameFixtureSyntaxError):
-        Grammer.dsl_to_str_constructors('x(a,b,c)|s(3,3)')
+        Grammar.dsl_to_str_constructors('x(a,b,c)|s(3,3)')
 
 #-------------------------------------------------------------------------------
 
@@ -143,4 +145,12 @@ def test_import() -> None:
 
 
 
+#-------------------------------------------------------------------------------
+def test_grammar_definition() -> None:
+    import static_frame as sf
 
+    # container components
+    cc = GrammarDoc.container_components()
+    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False)))
+
+    # container types

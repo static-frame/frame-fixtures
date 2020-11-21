@@ -38,7 +38,7 @@ The ``[extras]`` configuration includes StaticFrame as a requirement. As StaticF
 
 
 Examples
----------------------
+------------------------------
 
 Import FrameFixtures with the following convention:
 
@@ -68,21 +68,65 @@ The same ``Frame`` can be converted to Pandas:
 3  zB7E  zuVU   True  3338.48  zS6w  zDVQ  False  3442.84
 
 
-Create a 10 by 3 ``Frame`` of objects and complex numbers with two-level index of string, date and a one-level column of strings.
+Create a 4 by 4 ``Frame`` of Booleans with three-level index and columns.
 
->>> ff.Fixture.to_frame('v(object,complex)|i(IH,(str,dtD))|c(I,str)|s(10,4)')
+>>> ff.Fixture.to_frame('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)')
 <Frame>
-<Index>                          zZbu     ztsv                zUvW     zkuW               <<U4>
+<IndexHierarchy>               zZbu   zZbu   zZbu   zZbu   <<U4>
+                               105269 105269 119909 119909 <int64>
+                               zDVQ   z5hI   zyT8   zS6w   <<U4>
 <IndexHierarchy>
-zZbu             2258-03-21      96520    (-610.8-2859.36j)   True     (1080.4-646.86j)
-zZbu             2298-04-20      -88017   (3243.94+3740.6j)   False    (2580.34-314.34j)
-ztsv             2501-10-08      92867    (-823.14+3261.32j)  105269   (700.42-2882.58j)
-ztsv             2441-04-14      3884.98  (114.58-626.64j)    119909   (3338.48+2377.6j)
-zUvW             2234-04-07      -646.86  (-3367.74+3793.88j) 194224   (2444.92-2574.48j)
-zUvW             2210-12-26      -314.34  (2812.54-142.38j)   -2981.64 (3944.56-2077.98j)
-zkuW             2224-04-06      zDdR     (1325.38-3512.22j)  3565.34  (2105.38+627.1j)
-zkuW             2202-08-20      zuVU     (-3424.62-1404.42j) 3770.2   (2398.18+2890.4j)
-zmVj             2006-10-27      zKka     (-779.94+837.08j)   zMmd     (3884.48+80.72j)
-zmVj             2450-09-20      84967    (353.96-1107.72j)   zRKC     (3442.66+2873j)
-<<U4>            <datetime64[D]> <object> <complex128>        <object> <complex128>
+zZbu             105269  zDVQ  False  False  True   False
+zZbu             105269  z5hI  False  False  False  False
+zZbu             119909  zyT8  False  False  False  True
+zZbu             119909  zS6w  True   False  True   True
+<<U4>            <int64> <<U4> <bool> <bool> <bool> <bool>
 
+
+The same ``Frame`` can be converted to Pandas:
+
+>>> ff.Fixture.to_frame('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)').to_pandas()
+__index0__                         zZbu
+__index1__                       105269        119909
+__index2__                         zDVQ   z5hI   zyT8   zS6w
+__index0__ __index1__ __index2__
+zZbu       105269     zDVQ        False  False   True  False
+                      z5hI        False  False  False  False
+           119909     zyT8        False  False  False   True
+                      zS6w         True  False   True   True
+
+
+FrameFixtures supports defining features unique to StaticFrame, such as specifying a grow-only ``FrameGO``, ``Index`` types within ``IndexHierarchy``, and usage of ``np.datetime64`` types other than nanoseconds. These specifications are not directly convertible to Pandas.
+
+>>> ff.Fixture.to_frame('f(Fg)|v(int,bool,str)|i((IY,ID),(dtY,dtD))|c(ISg,dts)|s(6,2)')
+<FrameGO>
+<IndexSecondGO>                  1970-01-01T09:38:35 1970-01-01T01:00:48 <datetime64[s]>
+<IndexHierarchy>
+36685            2258-03-21      -88017              False
+36685            2298-04-20      92867               False
+5618             2501-10-08      84967               False
+5618             2441-04-14      13448               False
+93271            2234-04-07      175579              False
+93271            2210-12-26      58768               False
+<datetime64[Y]>  <datetime64[D]> <int64>             <bool>
+
+
+
+
+Grammar
+------------------------------
+
+A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components are given arguments using Python function call syntax, and multiple container components are delimited with ``|``. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``. Whether components are required, and the number of required arguments, is summarized below.
+
+|Symbol |Component |Required |Arguments|
++=======+==========+=========+=========+
+|f      |Frame     |False    |1        |
++-------+----------+---------+---------+
+|i      |Index     |False    |2        |
++-------+----------+---------+---------+
+|c      |Columns   |False    |2        |
++-------+----------+---------+---------+
+|v      |Values    |False    |nan      |
++-------+----------+---------+---------+
+|s      |Shape     |True     |2        |
++-------+----------+---------+---------+

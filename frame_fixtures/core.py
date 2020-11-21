@@ -139,8 +139,19 @@ def get_str_to_type(
             bool,
             complex,
             object,
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            np.float16,
+            np.float32,
+            np.float64,
+            np.float128,
+            np.complex64,
+            np.complex128,
             ):
         ref[cls.__name__] = cls
+
 
     return ref
 
@@ -363,22 +374,31 @@ class SourceValues:
 class FrameFixtureSyntaxError(SyntaxError):
     pass
 
-class Grammer:
+class Grammar:
     FRAME = 'f'
     INDEX = 'i'
     COLUMNS = 'c'
     VALUES = 'v'
     SHAPE = 's'
 
-    KNOWN = {FRAME, INDEX, COLUMNS, VALUES, SHAPE}
+    # KNOWN = {FRAME, INDEX, COLUMNS, VALUES, SHAPE}
+    KNOWN = {
+            FRAME: 'Frame',
+            INDEX: 'Index',
+            COLUMNS: 'Columns',
+            VALUES: 'Values',
+            SHAPE: 'Shape',
+            }
 
-    ARG_COUNT_RANGE = {
+    ARG_COUNT = {
             FRAME: frozenset((0, 1)),
             INDEX: frozenset((0, 2)),
             COLUMNS: frozenset((0, 2)),
             # VALUES can have any number of args
             SHAPE: frozenset((2,)),
             }
+
+
 
     @classmethod
     def validate(cls,
@@ -388,15 +408,14 @@ class Grammer:
             raise FrameFixtureSyntaxError(f'missing required label: {cls.SHAPE}')
 
         for token in constructors.keys():
-            if token in cls.ARG_COUNT_RANGE:
-                sizes = cls.ARG_COUNT_RANGE[token]
+            if token in cls.ARG_COUNT:
+                sizes = cls.ARG_COUNT[token]
                 if len(constructors[token]) not in sizes:
                     raise FrameFixtureSyntaxError(f'component {token} has invalid number of arguments: {len(constructors[token])} not in {sizes}')
             elif token == cls.VALUES:
                 pass
             else:
                 raise FrameFixtureSyntaxError(f'invalid token: {token}')
-
 
     @classmethod
     def dsl_to_str_constructors(cls,
@@ -452,6 +471,29 @@ class Grammer:
         cls.validate(constructors) # will raise
 
         return constructors
+
+
+class GrammarDoc:
+
+    @staticmethod
+    def container_components(
+            module_sf: tp.Optional[ModuleType] = None,
+            ) -> 'Frame':
+        str_to_type = get_str_to_type(module_sf)
+
+        def records():
+            for arg, label in Grammar.KNOWN.items():
+                not_required = arg not in Grammar.ARG_COUNT or 0 in Grammar.ARG_COUNT[arg]
+                arguments = max(Grammar.ARG_COUNT.get(arg, (np.nan,)))
+                yield (arg, label, not not_required, arguments)
+
+        f = str_to_type['F'].from_records(
+                records(),
+                columns=('Symbol', 'Component', 'Required', 'Arguments'),
+                dtypes=(str, str, bool, object),
+                )
+        return f
+
 
 #-------------------------------------------------------------------------------
 class Fixture:
@@ -548,7 +590,7 @@ class Fixture:
 
         shape: ShapeType = tp.cast(ShapeType, constructors['s'])
 
-        if Grammer.VALUES not in constructors:
+        if Grammar.VALUES not in constructors:
             values_constructor = ('float',)
         else:
             values_constructor = constructors['v'] #type: ignore
@@ -598,7 +640,7 @@ class Fixture:
         str_to_type = get_str_to_type(
                 module_sf=module_sf,
                 )
-        constructors = Grammer.dsl_to_str_constructors(dsl)
+        constructors = Grammar.dsl_to_str_constructors(dsl)
 
         tb, index, columns = cls._to_containers(constructors, str_to_type)
 
