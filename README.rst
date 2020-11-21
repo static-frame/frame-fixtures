@@ -1,8 +1,8 @@
 
-.. image:: https://img.shields.io/pypi/pyversions/static-frame.svg?style=flat-square
+.. image:: https://img.shields.io/pypi/pyversions/static-frame.svg
   :target: https://pypi.org/project/static-frame
 
-.. image:: https://img.shields.io/pypi/v/frame-fixtures.svg?style=flat-square
+.. image:: https://img.shields.io/pypi/v/frame-fixtures.svg
   :target: https://pypi.org/project/frame-fixtures
 
 .. image:: https://github.com/InvestmentSystems/frame-fixtures/workflows/Test/badge.svg
@@ -116,7 +116,10 @@ FrameFixtures supports defining features unique to StaticFrame, such as specifyi
 Grammar
 ------------------------------
 
-A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components are given arguments using Python function call syntax, and multiple container components are delimited with ``|``. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``. Whether components are required, and the number of required arguments, is summarized below.
+Container Components
+.............................
+
+A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components are given arguments using Python function call syntax, and multiple container components are delimited with ``|``. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``. Component symbols, whether components are required, and the number of required arguments, is summarized below.
 
 +-------+----------+---------+---------+
 |Symbol |Component |Required |Arguments|
@@ -131,3 +134,96 @@ A FrameFixture is defined by specifying one or more container components using s
 +-------+----------+---------+---------+
 |s      |Shape     |True     |2        |
 +-------+----------+---------+---------+
+
+
+Constructor Specifiers
+.............................
+
++-------+-----------------+
+|Symbol |cls              |
++=======+=================+
+|TB     |TypeBlocks       |
++-------+-----------------+
+|F      |Frame            |
++-------+-----------------+
+|Fg     |FrameGO          |
++-------+-----------------+
+|I      |Index            |
++-------+-----------------+
+|Ig     |IndexGO          |
++-------+-----------------+
+|IH     |IndexHierarchy   |
++-------+-----------------+
+|IHg    |IndexHierarchyGO |
++-------+-----------------+
+|IY     |IndexYear        |
++-------+-----------------+
+|IYg    |IndexYearGO      |
++-------+-----------------+
+|IYM    |IndexYearMonth   |
++-------+-----------------+
+|IYMg   |IndexYearMonthGO |
++-------+-----------------+
+|ID     |IndexDate        |
++-------+-----------------+
+|IDg    |IndexDateGO      |
++-------+-----------------+
+|IS     |IndexSecond      |
++-------+-----------------+
+|ISg    |IndexSecondGO    |
++-------+-----------------+
+|IN     |IndexNanosecond  |
++-------+-----------------+
+|INg    |IndexNanosecondGO|
++-------+-----------------+
+
+
+
+dtype Specifiers
+.............................
+
++-----------+--------------------------+
+|Symbol     |Class                     |
++===========+==========================+
+|dtY        |dtype('<M8[Y]')           |
++-----------+--------------------------+
+|dtM        |dtype('<M8[M]')           |
++-----------+--------------------------+
+|dtD        |dtype('<M8[D]')           |
++-----------+--------------------------+
+|dts        |dtype('<M8[s]')           |
++-----------+--------------------------+
+|dtns       |dtype('<M8[ns]')          |
++-----------+--------------------------+
+|int        |<class 'int'>             |
++-----------+--------------------------+
+|str        |<class 'str'>             |
++-----------+--------------------------+
+|float      |<class 'float'>           |
++-----------+--------------------------+
+|bool       |<class 'bool'>            |
++-----------+--------------------------+
+|complex    |<class 'complex'>         |
++-----------+--------------------------+
+|object     |<class 'object'>          |
++-----------+--------------------------+
+|int8       |<class 'numpy.int8'>      |
++-----------+--------------------------+
+|int16      |<class 'numpy.int16'>     |
++-----------+--------------------------+
+|int32      |<class 'numpy.int32'>     |
++-----------+--------------------------+
+|int64      |<class 'numpy.int64'>     |
++-----------+--------------------------+
+|float16    |<class 'numpy.float16'>   |
++-----------+--------------------------+
+|float32    |<class 'numpy.float32'>   |
++-----------+--------------------------+
+|float64    |<class 'numpy.float64'>   |
++-----------+--------------------------+
+|complex64  |<class 'numpy.complex64'> |
++-----------+--------------------------+
+|complex128 |<class 'numpy.complex128'>|
++-----------+--------------------------+
+
+

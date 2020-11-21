@@ -91,7 +91,7 @@ def repeat_count(iter: tp.Iterable[T],
             yield v
 
 #-------------------------------------------------------------------------------
-def get_str_to_type(
+def get_str_to_constructor(
         module_sf: tp.Optional[ModuleType],
         ) -> StrToType:
     if module_sf is None:
@@ -120,7 +120,12 @@ def get_str_to_type(
             ):
         key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
         ref[key] = cls
+    return ref
 
+
+def get_str_to_dtype() -> StrToType:
+
+    ref = {}
     for cls in (
             np.dtype('datetime64[Y]'),
             np.dtype('datetime64[M]'),
@@ -146,13 +151,24 @@ def get_str_to_type(
             np.float16,
             np.float32,
             np.float64,
-            np.float128,
+            # np.float128, # not available on win
             np.complex64,
             np.complex128,
             ):
         ref[cls.__name__] = cls
 
+    return ref
 
+
+def get_str_to_type(
+        module_sf: tp.Optional[ModuleType],
+        ) -> StrToType:
+    if module_sf is None:
+        import static_frame as sf
+        module_sf = sf
+
+    ref = get_str_to_constructor(module_sf=module_sf)
+    ref.update(get_str_to_dtype())
     return ref
 
 EMPTY_ARRAY = np.array(())
@@ -474,6 +490,9 @@ class Grammar:
 
 
 class GrammarDoc:
+    '''
+    Tables for producing documentation of the grammar.
+    '''
 
     @staticmethod
     def container_components(
@@ -493,6 +512,41 @@ class GrammarDoc:
                 dtypes=(str, str, bool, object),
                 )
         return f
+
+    @staticmethod
+    def specifiers_constructor(
+            module_sf: tp.Optional[ModuleType] = None,
+            ) -> 'Frame':
+        str_to_type = get_str_to_type(module_sf)
+
+        def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
+            for k, v in get_str_to_constructor(module_sf).items():
+                yield k, v.__name__
+
+        f = str_to_type['F'].from_records(
+                records(),
+                columns=('Symbol', 'Class'),
+                dtypes=(str, str),
+                )
+        return f
+
+    @staticmethod
+    def specifiers_dtype(
+            module_sf: tp.Optional[ModuleType] = None,
+            ) -> 'Frame':
+        str_to_type = get_str_to_type(module_sf)
+
+        def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
+            for k, v in get_str_to_dtype().items():
+                yield k, repr(v)
+
+        f = str_to_type['F'].from_records(
+                records(),
+                columns=('Symbol', 'Class'),
+                dtypes=(str, str),
+                )
+        return f
+
 
 
 #-------------------------------------------------------------------------------

@@ -154,3 +154,14 @@ def test_grammar_definition() -> None:
     print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False)))
 
     # container types
+    cc = GrammarDoc.specifiers_constructor()
+    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False)))
+
+    # container types
+    cc = GrammarDoc.specifiers_dtype()
+    print(cc.to_rst(sf.DisplayConfig(include_index=False, type_show=False, cell_max_width=40)))
+
+
+
+
+
