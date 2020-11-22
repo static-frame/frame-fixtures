@@ -126,15 +126,14 @@ def get_str_to_constructor(
 def get_str_to_dtype() -> StrToType:
 
     ref = {}
-    for cls in (
-            np.dtype('datetime64[Y]'),
-            np.dtype('datetime64[M]'),
-            np.dtype('datetime64[D]'),
-            # NOTE: we not expose hour as IH is ambiguous
-            np.dtype('datetime64[s]'),
-            np.dtype('datetime64[ns]'),
-            ):
+    for unit in ('Y', 'M', 'D', 's', 'ns'):
+        cls = np.dtype(f'datetime64[{unit}]')
         key = f'dt{np.datetime_data(cls)[0]}'
+        ref[key] = cls
+
+    for unit in ('Y', 'M', 'D', 's', 'ns'):
+        cls = np.dtype(f'timedelta64[{unit}]')
+        key = f'td{np.datetime_data(cls)[0]}'
         ref[key] = cls
 
     for cls in (
@@ -487,7 +486,7 @@ class Grammar:
                 elif isinstance(arg, ast.Num): # pre python 3.8
                     args.append(arg.n) #type: ignore
                 else:
-                    raise NotImplementedError(f'no handling for {arg}')
+                    raise FrameFixtureSyntaxError(f'no handling for {arg}')
 
             constructors[key] = tuple(args)
 

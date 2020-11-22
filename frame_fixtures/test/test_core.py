@@ -23,6 +23,11 @@ def test_repeat_count_a() -> None:
     post = list(repeat_count(range(4), count=3))
     assert post == [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
 
+def test_repeat_count_b() -> None:
+    with pytest.raises(ValueError):
+        post = list(repeat_count(range(4), count=-3))
+
+
 #-------------------------------------------------------------------------------
 def test_source_values_a() -> None:
 
@@ -75,24 +80,31 @@ def test_source_values_dtype_to_element_iter_b() -> None:
             ))
     assert a[3:] == b
 
+def test_source_values_dtype_to_element_iter_c() -> None:
+    a = list(x for x, _ in zip(
+            SourceValues.dtype_to_element_iter(np.dtype('i')),
+            range(8),
+            ))
 
-def test_source_values_dtype_spec_to_array_a() -> None:
+def test_source_values_dtype_spec_to_array_c() -> None:
 
-    a = SourceValues.dtype_spec_to_array(int, shift=101, count=3)
+    a = SourceValues.dtype_spec_to_array(np.dtype('timedelta64[Y]'),
+            shift=101, count=3)
     assert len(a) == 3
+    assert a.tolist() == [188510, 61878, 194249]
 
-    b = SourceValues.dtype_spec_to_array((bool, str), shift=101, count=3).tolist()
-    assert len(b) == 3
-
-    # SourceValues.update_primitives(10_000_000)
-    # import ipdb; ipdb.set_trace()
-
+def test_source_values_dtype_spec_to_array_d() -> None:
+    with pytest.raises(NotImplementedError):
+        a = SourceValues.dtype_spec_to_array(np.dtype('V'), shift=101, count=3)
 
 #-------------------------------------------------------------------------------
 def test_grammer_a() -> None:
 
     with pytest.raises(FrameFixtureSyntaxError):
         Grammar.dsl_to_str_constructors('')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammar.dsl_to_str_constructors('i(I,str)')
 
     with pytest.raises(FrameFixtureSyntaxError):
         Grammar.dsl_to_str_constructors('f(a,b)|s(3,3)')
@@ -111,6 +123,12 @@ def test_grammer_a() -> None:
 
     with pytest.raises(FrameFixtureSyntaxError):
         Grammar.dsl_to_str_constructors('x(a,b,c)|s(3,3)')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammar.dsl_to_str_constructors('lambda x: 3')
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        Grammar.dsl_to_str_constructors('s(3,3)|i(I,lambda x: 3)')
 
 #-------------------------------------------------------------------------------
 
@@ -132,6 +150,18 @@ def test_fixture_to_frame_c() -> None:
     f1 = Fixture.to_frame('s(2,6)|c(IH,(str,dtD,int,int))')
     assert f1.to_pairs(0) == ((('zZbu', datetime.date(2258, 3, 21), 58768, -97851), ((0, 1930.4), (1, -1760.34))), (('zZbu', datetime.date(2258, 3, 21), 58768, 168362), ((0, -610.8), (1, 3243.94))), (('zZbu', datetime.date(2258, 3, 21), 146284, 130010), ((0, 694.3), (1, -72.96))), (('zZbu', datetime.date(2258, 3, 21), 146284, -150573), ((0, 1080.4), (1, 2580.34))), (('zZbu', datetime.date(2298, 4, 20), 170440, -157437), ((0, 3511.58), (1, 1175.36))), (('zZbu', datetime.date(2298, 4, 20), 170440, 35684), ((0, 1857.34), (1, 1699.34))))
 
+
+def test_fixture_to_frame_d() -> None:
+    f1 = Fixture.to_frame('s(2,2)|v(tdD,tds)')
+    assert f1.to_pairs(0) == ((0, ((0, np.timedelta64(88017,'D')), (1, np.timedelta64(92867,'D')))), (1, ((0, np.timedelta64(162197,'s')), (1, np.timedelta64(41157,'s')))))
+
+
+def test_fixture_to_frame_e() -> None:
+    with pytest.raises(RuntimeError):
+        f1 = Fixture.to_frame('s(2,2)|c(IH,tds)')
+
+    with pytest.raises(RuntimeError):
+        f1 = Fixture.to_frame('s(2,2)|c((I,I),(int,str,float))')
 
 #-------------------------------------------------------------------------------
 def test_import() -> None:
