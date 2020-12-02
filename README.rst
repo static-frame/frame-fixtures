@@ -51,7 +51,7 @@ Import FrameFixtures with the following convention:
 
 Create a 4 by 8 ``Frame`` of string, Booleans, and floats.
 
->>> ff.Fixture.to_frame('v(str,str,bool,float)|s(4,8)')
+>>> ff.parse('v(str,str,bool,float)|s(4,8)')
 <Frame>
 <Index> 0     1     2      3         4     5     6      7         <int64>
 <Index>
@@ -64,7 +64,7 @@ Create a 4 by 8 ``Frame`` of string, Booleans, and floats.
 
 The same ``Frame`` can be converted to Pandas:
 
->>> ff.Fixture.to_frame('v(str,str,bool,float)|s(4,8)').to_pandas()
+>>> ff.parse('v(str,str,bool,float)|s(4,8)').to_pandas()
       0     1      2        3     4     5      6        7
 0  zjZQ  zaji   True  1080.40  zDVQ  zEdH   True   647.90
 1  zO5l  zJnC  False  2580.34  z5hI  zB7E   True  2755.18
@@ -74,7 +74,7 @@ The same ``Frame`` can be converted to Pandas:
 
 Create a 4 by 4 ``Frame`` of Booleans with three-level index and columns.
 
->>> ff.Fixture.to_frame('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)')
+>>> ff.parse('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)')
 <Frame>
 <IndexHierarchy>               zZbu   zZbu   zZbu   zZbu   <<U4>
                                105269 105269 119909 119909 <int64>
@@ -89,7 +89,7 @@ zZbu             119909  zS6w  True   False  True   True
 
 The same ``Frame`` can be converted to Pandas:
 
->>> ff.Fixture.to_frame('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)').to_pandas()
+>>> ff.parse('v(bool)|i(IH,(str,int,str))|c(IH,(str,int,str))|s(4,4)').to_pandas()
 __index0__                         zZbu
 __index1__                       105269        119909
 __index2__                         zDVQ   z5hI   zyT8   zS6w
@@ -102,7 +102,7 @@ zZbu       105269     zDVQ        False  False   True  False
 
 FrameFixtures support defining features unique to StaticFrame, such as specifying a grow-only ``FrameGO``, ``Index`` types within ``IndexHierarchy``, and usage of ``np.datetime64`` types other than nanoseconds. These specifications are not directly convertible to Pandas.
 
->>> ff.Fixture.to_frame('f(Fg)|v(int,bool,str)|i((IY,ID),(dtY,dtD))|c(ISg,dts)|s(6,2)')
+>>> ff.parse('f(Fg)|v(int,bool,str)|i((IY,ID),(dtY,dtD))|c(ISg,dts)|s(6,2)')
 <FrameGO>
 <IndexSecondGO>                  1970-01-01T09:38:35 1970-01-01T01:00:48 <datetime64[s]>
 <IndexHierarchy>

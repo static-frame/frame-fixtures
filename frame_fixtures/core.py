@@ -695,7 +695,7 @@ class Fixture:
         return tb, index, columns
 
     @classmethod
-    def to_frame(cls,
+    def parse(cls,
             dsl: str,
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
@@ -723,6 +723,11 @@ class Fixture:
 
 
 
+def parse(dsl: str) -> 'Frame':
+    '''
+    Given a FrameFixtures DSL string, return a Fraem.
+    '''
+    return Fixture.parse(dsl=dsl)
 
 
 
