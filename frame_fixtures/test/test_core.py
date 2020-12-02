@@ -14,6 +14,8 @@ from frame_fixtures.core import GrammarDoc
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
 
+from frame_fixtures import parse
+
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
     assert list(iter_shift(range(5), 1, wrap=True)) == [1, 2, 3, 4, 0]
@@ -169,7 +171,7 @@ def test_import() -> None:
 
     import frame_fixtures as ff
 
-    f1 = ff.Fixture.parse('s(2,2)|i(I,str)')
+    f1 = ff.parse('s(2,2)|i(I,str)')
 
     assert f1.to_pairs(0) == ((0, (('zZbu', 1930.4), ('ztsv', -1760.34))), (1, (('zZbu', -610.8), ('ztsv', 3243.94))))
 
