@@ -9,11 +9,12 @@
   :target: https://codecov.io/gh/InvestmentSystems/frame-fixtures
 
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Test?logo=Github
+.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Test?label=test&logo=Github
   :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3ATest
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Quality?logo=Github
+.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Quality?label=quality&logo=Github
   :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3AQuality
+
 
 
 frame-fixtures
