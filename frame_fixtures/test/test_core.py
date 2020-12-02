@@ -14,8 +14,6 @@ from frame_fixtures.core import GrammarDoc
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
 
-from frame_fixtures import parse
-
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
     assert list(iter_shift(range(5), 1, wrap=True)) == [1, 2, 3, 4, 0]
@@ -99,6 +97,13 @@ def test_source_values_dtype_spec_to_array_c() -> None:
 def test_source_values_dtype_spec_to_array_d() -> None:
     with pytest.raises(NotImplementedError):
         a = SourceValues.dtype_spec_to_array(np.dtype('V'), shift=101, count=3)
+
+
+def test_source_values_dtype_spec_to_array_e() -> None:
+    a = SourceValues.dtype_spec_to_array((int, str), shift=101, count=3)
+    assert a.tolist() == [(188510, 'zlm0'), (-61878, 'zDIP'), (194249, 'zOgj')]
+
+
 
 #-------------------------------------------------------------------------------
 def test_grammer_a() -> None:
