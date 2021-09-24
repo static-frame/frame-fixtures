@@ -26,7 +26,8 @@ def clean(context):
 @invoke.task
 def test(context,
         unit=False,
-        cov=False,):
+        cov=False,
+        ):
     '''Run tests.
     '''
 

@@ -583,8 +583,10 @@ class Fixture:
                 is_static = {c.STATIC for c in constructor}
                 assert len(is_static) == 1
                 builder = str_to_type['IH'] if is_static.pop() else str_to_type['IHg']
+                index_constructors = constructor
             else:
                 builder = constructor #type: ignore
+                index_constructors = None
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
@@ -598,7 +600,7 @@ class Fixture:
                 for _ in range(count):
                     yield tuple(next(x) for x in gens)
 
-            return builder.from_labels(labels())
+            return builder.from_labels(labels(), index_constructors=index_constructors)
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
         array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
