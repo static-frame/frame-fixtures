@@ -199,7 +199,7 @@ class SourceValues:
             offset: int = 0,
             ) -> np.ndarray:
 
-        values_char = np.empty(len(array), dtype=f'<U4')
+        values_char = np.empty(len(array), dtype='<U4')
         for i, v in enumerate(array):
             values_char[v - offset] = ''.join(next(cls._LABEL_ALPHABET))
 
@@ -575,11 +575,11 @@ class Fixture:
             # dtype_spec must be a tuple
 
             if not isinstance(dtype_spec, tuple) or len(dtype_spec) < 2:
-                raise RuntimeError(f'for building IH dtype_spec must be a tuple')
+                raise RuntimeError('for building IH dtype_spec must be a tuple')
 
             if constructor_is_tuple:
                 if len(constructor) != len(dtype_spec): #type: ignore
-                    raise RuntimeError(f'length of index_constructors must be the same as dtype_spec')
+                    raise RuntimeError('length of index_constructors must be the same as dtype_spec')
                 is_static = {c.STATIC for c in constructor}
                 assert len(is_static) == 1
                 builder = str_to_type['IH'] if is_static.pop() else str_to_type['IHg']

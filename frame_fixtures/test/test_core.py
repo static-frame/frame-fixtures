@@ -171,6 +171,12 @@ def test_fixture_to_frame_e() -> None:
     with pytest.raises(RuntimeError):
         f1 = Fixture.parse('s(2,2)|c((I,I),(int,str,float))')
 
+
+
+def test_large_a() -> None:
+    f1 = Fixture.parse('s(200000,4)|i(I,int)|c(I,str)|v(str)')
+    assert f1.shape == (200000, 4)
+
 #-------------------------------------------------------------------------------
 def test_import() -> None:
 
