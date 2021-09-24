@@ -9,9 +9,9 @@ from itertools import permutations
 import numpy as np #type: ignore
 
 if tp.TYPE_CHECKING:
-    from static_frame import Frame #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.util import DtypeSpecifier #type: ignore #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.container import ContainerOperand #type: ignore #pylint: disable=W0611 #pragma: no cover
+    from static_frame import Frame #pylint: disable=W0611 #pragma: no cover
+    from static_frame.core.util import DtypeSpecifier #pylint: disable=W0611 #pragma: no cover
+    from static_frame.core.container import ContainerOperand #pylint: disable=W0611 #pragma: no cover
     from static_frame import Index #pylint: disable=W0611 #pragma: no cover
     from static_frame import IndexHierarchy #pylint: disable=W0611 #pragma: no cover
     from static_frame import TypeBlocks #pylint: disable=W0611 #pragma: no cover
@@ -518,7 +518,7 @@ class GrammarDoc:
                 columns=('Symbol', 'Component', 'Required', 'Arguments', 'Signature'),
                 dtypes=(str, str, bool, object, str),
                 )
-        return f
+        return f #type: ignore
 
     @staticmethod
     def specifiers_constructor(
@@ -537,7 +537,7 @@ class GrammarDoc:
                 columns=('Symbol', 'Class'),
                 dtypes=(str, str),
                 )
-        return f
+        return f #type: ignore
 
     @staticmethod
     def specifiers_dtype(
@@ -554,7 +554,7 @@ class GrammarDoc:
                 columns=('Symbol', 'Class'),
                 dtypes=(str, str),
                 )
-        return f
+        return f #type: ignore
 
 
 
@@ -580,13 +580,13 @@ class Fixture:
             if constructor_is_tuple:
                 if len(constructor) != len(dtype_spec): #type: ignore
                     raise RuntimeError('length of index_constructors must be the same as dtype_spec')
-                is_static = {c.STATIC for c in constructor}
+                is_static = {c.STATIC for c in constructor} #type: ignore
                 assert len(is_static) == 1
                 builder = str_to_type['IH'] if is_static.pop() else str_to_type['IHg']
                 index_constructors = constructor
             else:
                 builder = constructor #type: ignore
-                index_constructors = None
+                index_constructors = None #type: ignore
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
@@ -600,7 +600,7 @@ class Fixture:
                 for _ in range(count):
                     yield tuple(next(x) for x in gens)
 
-            return builder.from_labels(labels(), index_constructors=index_constructors)
+            return builder.from_labels(labels(), index_constructors=index_constructors) #type: ignore
 
         # if constructor is IndexHierarchy, this will work, as array will be a 1D array of tuples that, when given to from_labels, will work
         array = SourceValues.dtype_spec_to_array(dtype_spec, count=count)
@@ -626,7 +626,7 @@ class Fixture:
                         count=count_row,
                         shift=ints[col] % max_shift
                         )
-        return str_to_type['TB'].from_blocks(gen()).consolidate()
+        return str_to_type['TB'].from_blocks(gen()).consolidate() #type: ignore
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -673,12 +673,12 @@ class Fixture:
                     )
             index = cls._build_index(
                     shape[0],
-                    constructor,
+                    constructor, #type: ignore
                     dtype_spec,
                     str_to_type,
                     )
         else:
-            index = None
+            index = None #type: ignore
 
         if 'c' in constructors and constructors['c']:
             constructor, dtype_spec = cls._str_to_build(
@@ -687,12 +687,12 @@ class Fixture:
                     )
             columns = cls._build_index(
                     shape[1],
-                    constructor,
+                    constructor, #type: ignore
                     dtype_spec,
                     str_to_type,
                     )
         else:
-            columns = None
+            columns = None #type: ignore
 
         return tb, index, columns
 
