@@ -2,7 +2,7 @@ numpy==1.16.5
 static-frame==0.7.6
 invoke==1.4.0
 pylint==2.4.4
-mypy==0.770
+mypy==0.812
 codecov>=2.0.15
 pytest==3.8.0
 pytest-cov==2.6.0
