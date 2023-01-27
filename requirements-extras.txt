@@ -1,1 +1,2 @@
-static-frame>=0.6.0
+static-frame>=1.1.1
+

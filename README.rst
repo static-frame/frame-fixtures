@@ -1,19 +1,19 @@
 
-.. image:: https://img.shields.io/pypi/pyversions/static-frame.svg
-  :target: https://pypi.org/project/static-frame
+.. image:: https://img.shields.io/pypi/pyversions/frame-fixtures.svg
+  :target: https://pypi.org/project/frame-fixtures
 
 .. image:: https://img.shields.io/pypi/v/frame-fixtures.svg
   :target: https://pypi.org/project/frame-fixtures
 
-.. image:: https://img.shields.io/codecov/c/github/InvestmentSystems/frame-fixtures.svg
-  :target: https://codecov.io/gh/InvestmentSystems/frame-fixtures
+.. image:: https://img.shields.io/codecov/c/github/static-frame/frame-fixtures.svg
+  :target: https://codecov.io/gh/static-frame/frame-fixtures
 
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Test?label=test&logo=Github
-  :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3ATest
+.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/test.yml?branch=master&label=test&logo=Github
+  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/test.yml
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Quality?label=quality&logo=Github
-  :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3AQuality
+.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/quality.yml?branch=master&label=quality&logo=Github
+  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/quality.yml
 
 
 
