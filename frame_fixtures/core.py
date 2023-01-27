@@ -587,7 +587,7 @@ class Fixture:
                 index_constructors = constructor
             else:
                 builder = constructor #type: ignore
-                index_constructors = str_to_type['IACF'] #type: ignore
+                index_constructors = str_to_type['IACF']
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
