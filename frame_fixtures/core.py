@@ -117,6 +117,7 @@ def get_str_to_constructor(
             module_sf.IndexSecondGO, #type: ignore
             module_sf.IndexNanosecond, #type: ignore
             module_sf.IndexNanosecondGO, #type: ignore
+            module_sf.IndexAutoConstructorFactory, #type: ignore
             ):
         key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
         ref[key] = cls
@@ -586,7 +587,7 @@ class Fixture:
                 index_constructors = constructor
             else:
                 builder = constructor #type: ignore
-                index_constructors = None #type: ignore
+                index_constructors = str_to_type['IACF'] #type: ignore
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
