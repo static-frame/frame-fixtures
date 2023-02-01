@@ -13,6 +13,7 @@ from frame_fixtures.core import GrammarDoc
 
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
+from frame_fixtures.core import StrToTypeInterface
 
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
@@ -186,6 +187,14 @@ def test_uint_a() -> None:
     f1 = Fixture.parse('s(4,2)|(v(uint8))')
     assert f1.dtypes.values.tolist() == [np.dtype(np.uint8), np.dtype(np.uint8)]
 
+
+#-------------------------------------------------------------------------------
+def test_str_type_interface_a() -> None:
+    stti = StrToTypeInterface()
+    assert stti['int'] is int
+
+    with pytest.raises(FrameFixtureSyntaxError):
+        _ = stti['foo']
 
 
 #-------------------------------------------------------------------------------

@@ -49,6 +49,7 @@ DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 DT64_UNITS = ('Y', 'M', 'D', 'h', 'm', 's', 'ms', 'us', 'ns')
 
 COUNT_INIT = 100_000 # will be doubled on first usage
+EMPTY_ARRAY = np.array(())
 
 
 #-------------------------------------------------------------------------------
@@ -129,7 +130,8 @@ def get_str_to_constructor(
 
 
 def get_str_to_dtype() -> StrToType:
-
+    '''Get a mapping from a string representation to a dtype specifier (not always a dtype)
+    '''
     ref = {}
     for unit in DT64_UNITS:
         cls = np.dtype(f'datetime64[{unit}]')
@@ -167,18 +169,33 @@ def get_str_to_dtype() -> StrToType:
         ref[cls.__name__] = cls
     return ref
 
-def get_str_to_type(
-        module_sf: tp.Optional[ModuleType],
-        ) -> StrToType:
-    if module_sf is None:
-        import static_frame as sf
-        module_sf = sf
 
-    ref = get_str_to_constructor(module_sf=module_sf)
-    ref.update(get_str_to_dtype())
-    return ref
+class StrToTypeInterface:
+    '''Wrapper around StrToType mapping that provides informative key-errors.
+    '''
+    def __init__(self,
+            module_sf: tp.Optional[ModuleType] = None,
+            ):
+        if module_sf is None:
+            import static_frame as sf
+            module_sf = sf
 
-EMPTY_ARRAY = np.array(())
+        self._constructor_specifiers = get_str_to_constructor(module_sf)
+        self._dtype_specifiers = get_str_to_dtype()
+
+        assert len(self._constructor_specifiers.keys()
+                & self._dtype_specifiers.keys()) == 0
+        self._map = dict(chain(
+                self._constructor_specifiers.items(),
+                self._dtype_specifiers.items()
+                ))
+
+    def __getitem__(self, key: str) -> tp.Type[tp.Any]:
+        try:
+            return self._map[key]
+        except KeyError:
+            raise FrameFixtureSyntaxError(f'{key!r} is not a valid specifier. Choose a constructor specifier ({", ".join(self._constructor_specifiers.keys())}) or a dtype specifier ({", ".join(self._dtype_specifiers.keys())})') from None
+
 
 #-------------------------------------------------------------------------------
 class SourceValues:
@@ -513,14 +530,14 @@ class Grammar:
 
 class GrammarDoc:
     '''
-    Tables for producing documentation of the grammar.
+    Tables for producing documentation of the grammar. These are not used at library runtime.
     '''
 
     @staticmethod
     def container_components(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for arg, label in Grammar.KNOWN.items():
@@ -540,7 +557,7 @@ class GrammarDoc:
     def specifiers_constructor(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for k, v in get_str_to_constructor(module_sf).items():
@@ -559,7 +576,7 @@ class GrammarDoc:
     def specifiers_dtype(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for k, v in get_str_to_dtype().items():
@@ -582,7 +599,7 @@ class Fixture:
             count: int,
             constructor: ConstructorOrConstructors,
             dtype_spec: DtypeSpecOrSpecs,
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> IndexTypes:
 
         constructor_is_tuple = isinstance(constructor, tuple)
@@ -626,7 +643,7 @@ class Fixture:
     def _build_type_blocks(
             shape: ShapeType,
             dtype_specs: tp.Sequence[DtypeSpecOrSpecs],
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> 'TypeBlocks':
 
         count_row, count_col = shape
@@ -648,7 +665,7 @@ class Fixture:
     @staticmethod
     def _str_to_build(
             constructor: StrConstructorType, # typle of elements or tuples
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> BuildType:
         '''Convert strings to types or SF classes.
         '''
@@ -663,7 +680,7 @@ class Fixture:
     @classmethod
     def _to_containers(cls,
             constructors: StrConstructorsType,
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> tp.Tuple['TypeBlocks',
                     tp.Optional[IndexTypes],
                     tp.Optional[IndexTypes],
@@ -718,7 +735,7 @@ class Fixture:
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
 
-        str_to_type = get_str_to_type(
+        str_to_type = StrToTypeInterface(
                 module_sf=module_sf,
                 )
         constructors = Grammar.dsl_to_str_constructors(dsl)
