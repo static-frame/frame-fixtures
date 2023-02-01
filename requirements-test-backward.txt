@@ -1,5 +1,5 @@
-numpy==1.24.1
-static-frame==1.2.1
+numpy==1.18.5
+static-frame==1.1.1
 invoke==2.0.0
 pylint==2.15.0
 mypy==0.812
