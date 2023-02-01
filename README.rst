@@ -1,19 +1,19 @@
 
-.. image:: https://img.shields.io/pypi/pyversions/static-frame.svg
-  :target: https://pypi.org/project/static-frame
+.. image:: https://img.shields.io/pypi/pyversions/frame-fixtures.svg
+  :target: https://pypi.org/project/frame-fixtures
 
 .. image:: https://img.shields.io/pypi/v/frame-fixtures.svg
   :target: https://pypi.org/project/frame-fixtures
 
-.. image:: https://img.shields.io/codecov/c/github/InvestmentSystems/frame-fixtures.svg
-  :target: https://codecov.io/gh/InvestmentSystems/frame-fixtures
+.. image:: https://img.shields.io/codecov/c/github/static-frame/frame-fixtures.svg
+  :target: https://codecov.io/gh/static-frame/frame-fixtures
 
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Test?label=test&logo=Github
-  :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3ATest
+.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/test.yml?branch=master&label=test&logo=Github
+  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/test.yml
 
-.. image:: https://img.shields.io/github/workflow/status/InvestmentSystems/frame-fixtures/Quality?label=quality&logo=Github
-  :target: https://github.com/InvestmentSystems/frame-fixtures/actions?query=workflow%3AQuality
+.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/quality.yml?branch=master&label=quality&logo=Github
+  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/quality.yml
 
 
 
@@ -124,7 +124,7 @@ Grammar
 Container Components
 .............................
 
-A FrameFixture is defined by specifying one or more container components using symbols such as `s` for shape and ``i`` for index. Container components (CCs) are given arguments using Python function call syntax, and multiple CCs are delimited with ``|``. The shape CC takes ints as arguments; all other CCs take Constructor Specifiers (CS) and/or Dtype Specifiers (DS) as arguments. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``, where 100 and 20 define the row and column counts, and `I` is the CC and `str` is the DS. Component symbols, whether components are required, and the number of required arguments, is summarized below.
+A FrameFixture is defined by specifying one or more container components using symbols such as ``s`` for shape and ``i`` for index. Container components (CCs) are given arguments using Python function call syntax, and multiple CCs are delimited with ``|``. The shape CC takes integers as arguments; all other CCs take Constructor Specifiers (CS) and/or Dtype Specifiers (DS) as arguments. So a 100 by 20 ``Frame`` with an index of ``str`` is specified as ``s(100,20)|i(I,str)``, where 100 and 20 define the row and column counts, and `I` is the CC and `str` is the DS. Component symbols, whether components are required, and the number of required arguments, is summarized below.
 
 +-------+----------+---------+----------+----------------------------------+
 |Symbol |Component |Required |Arguments |Signature                         |
@@ -146,50 +146,49 @@ Constructor Specifiers
 
 CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as their first argument.
 
-+-------+-----------------+
-|Symbol |Class            |
-+=======+=================+
-|F      |Frame            |
-+-------+-----------------+
-|Fg     |FrameGO          |
-+-------+-----------------+
-|I      |Index            |
-+-------+-----------------+
-|Ig     |IndexGO          |
-+-------+-----------------+
-|IH     |IndexHierarchy   |
-+-------+-----------------+
-|IHg    |IndexHierarchyGO |
-+-------+-----------------+
-|IY     |IndexYear        |
-+-------+-----------------+
-|IYg    |IndexYearGO      |
-+-------+-----------------+
-|IYM    |IndexYearMonth   |
-+-------+-----------------+
-|IYMg   |IndexYearMonthGO |
-+-------+-----------------+
-|ID     |IndexDate        |
-+-------+-----------------+
-|IDg    |IndexDateGO      |
-+-------+-----------------+
-|IS     |IndexSecond      |
-+-------+-----------------+
-|ISg    |IndexSecondGO    |
-+-------+-----------------+
-|IN     |IndexNanosecond  |
-+-------+-----------------+
-|INg    |IndexNanosecondGO|
-+-------+-----------------+
-
-
++-------+---------------------------+
+|Symbol |Class                      |
++=======+===========================+
+|F      |Frame                      |
++-------+---------------------------+
+|Fg     |FrameGO                    |
++-------+---------------------------+
+|I      |Index                      |
++-------+---------------------------+
+|Ig     |IndexGO                    |
++-------+---------------------------+
+|IH     |IndexHierarchy             |
++-------+---------------------------+
+|IHg    |IndexHierarchyGO           |
++-------+---------------------------+
+|IY     |IndexYear                  |
++-------+---------------------------+
+|IYg    |IndexYearGO                |
++-------+---------------------------+
+|IYM    |IndexYearMonth             |
++-------+---------------------------+
+|IYMg   |IndexYearMonthGO           |
++-------+---------------------------+
+|ID     |IndexDate                  |
++-------+---------------------------+
+|IDg    |IndexDateGO                |
++-------+---------------------------+
+|IS     |IndexSecond                |
++-------+---------------------------+
+|ISg    |IndexSecondGO              |
++-------+---------------------------+
+|IN     |IndexNanosecond            |
++-------+---------------------------+
+|INg    |IndexNanosecondGO          |
++-------+---------------------------+
+|IACF   |IndexAutoConstructorFactory|
++-------+---------------------------+
 
 
 Dtype Specifiers
 .............................
 
 DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the ``i`` and ``c`` CC take one or many DSs as their second argument.
-
 
 +-----------+--------------------------+
 |Symbol     |Class                     |
@@ -200,7 +199,15 @@ DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the 
 +-----------+--------------------------+
 |dtD        |dtype('<M8[D]')           |
 +-----------+--------------------------+
+|dth        |dtype('<M8[h]')           |
++-----------+--------------------------+
+|dtm        |dtype('<M8[m]')           |
++-----------+--------------------------+
 |dts        |dtype('<M8[s]')           |
++-----------+--------------------------+
+|dtms       |dtype('<M8[ms]')          |
++-----------+--------------------------+
+|dtus       |dtype('<M8[us]')          |
 +-----------+--------------------------+
 |dtns       |dtype('<M8[ns]')          |
 +-----------+--------------------------+
@@ -210,13 +217,23 @@ DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the 
 +-----------+--------------------------+
 |tdD        |dtype('<m8[D]')           |
 +-----------+--------------------------+
+|tdh        |dtype('<m8[h]')           |
++-----------+--------------------------+
+|tdm        |dtype('<m8[m]')           |
++-----------+--------------------------+
 |tds        |dtype('<m8[s]')           |
++-----------+--------------------------+
+|tdms       |dtype('<m8[ms]')          |
++-----------+--------------------------+
+|tdus       |dtype('<m8[us]')          |
 +-----------+--------------------------+
 |tdns       |dtype('<m8[ns]')          |
 +-----------+--------------------------+
 |int        |<class 'int'>             |
 +-----------+--------------------------+
 |str        |<class 'str'>             |
++-----------+--------------------------+
+|bytes      |<class 'bytes'>           |
 +-----------+--------------------------+
 |float      |<class 'float'>           |
 +-----------+--------------------------+
@@ -234,6 +251,14 @@ DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the 
 +-----------+--------------------------+
 |int64      |<class 'numpy.int64'>     |
 +-----------+--------------------------+
+|uint8      |<class 'numpy.uint8'>     |
++-----------+--------------------------+
+|uint16     |<class 'numpy.uint16'>    |
++-----------+--------------------------+
+|uint32     |<class 'numpy.uint32'>    |
++-----------+--------------------------+
+|uint64     |<class 'numpy.uint64'>    |
++-----------+--------------------------+
 |float16    |<class 'numpy.float16'>   |
 +-----------+--------------------------+
 |float32    |<class 'numpy.float32'>   |
@@ -244,6 +269,3 @@ DSs are given to the ``v`` CC, and are used repeatedly to fill all columns; the 
 +-----------+--------------------------+
 |complex128 |<class 'numpy.complex128'>|
 +-----------+--------------------------+
-
-
-

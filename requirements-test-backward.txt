@@ -1,0 +1,7 @@
+numpy==1.18.5
+static-frame==1.1.1
+invoke==2.0.0
+pylint==2.4.4
+mypy==0.812
+pytest==7.1.2
+pytest-cov==4.0.0

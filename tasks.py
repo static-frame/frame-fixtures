@@ -42,7 +42,11 @@ def grammar(context):
     from frame_fixtures.core import GrammarDoc
     import static_frame as sf #type: ignore
 
-    config = sf.DisplayConfig(include_index=False, type_show=False, cell_max_width=40)
+    config = sf.DisplayConfig(include_index=False,
+            type_show=False,
+            display_rows=400,
+            cell_max_width=40)
+
     # container components
     cc = GrammarDoc.container_components()
     print(cc.to_rst(config))

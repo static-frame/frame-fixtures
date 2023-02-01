@@ -38,14 +38,18 @@ IndexTypes = tp.Union['Index', 'IndexHierarchy']
 
 
 DTYPE_OBJECT = np.dtype(object)
-DTYPE_INT = np.dtype(int)
-DTYPE_FLOAT = np.dtype(float)
+DTYPE_INT = np.dtype(np.int64)
+DTYPE_FLOAT = np.dtype(np.float64)
 DTYPE_COMPLEX = np.dtype(complex)
-DTYPE_STR = np.dtype(str)
+DTYPE_STR = np.dtype('U4')
+DTYPE_BYTES = np.dtype('S4')
 
 DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 
+DT64_UNITS = ('Y', 'M', 'D', 'h', 'm', 's', 'ms', 'us', 'ns')
+
 COUNT_INIT = 100_000 # will be doubled on first usage
+EMPTY_ARRAY = np.array(())
 
 
 #-------------------------------------------------------------------------------
@@ -98,6 +102,7 @@ def get_str_to_constructor(
         import static_frame as sf
         module_sf = sf
 
+    # NOTE: IndexHour, IndexMillisecond, IndexMicrosecond cannot be used as abreviated here because they would collide with IndexHierarchy or themselves; would need to chagne encoding
     ref = {}
     for cls in (
             module_sf.TypeBlocks, #type: ignore
@@ -117,6 +122,7 @@ def get_str_to_constructor(
             module_sf.IndexSecondGO, #type: ignore
             module_sf.IndexNanosecond, #type: ignore
             module_sf.IndexNanosecondGO, #type: ignore
+            module_sf.IndexAutoConstructorFactory, #type: ignore
             ):
         key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
         ref[key] = cls
@@ -124,14 +130,15 @@ def get_str_to_constructor(
 
 
 def get_str_to_dtype() -> StrToType:
-
+    '''Get a mapping from a string representation to a dtype specifier (not always a dtype)
+    '''
     ref = {}
-    for unit in ('Y', 'M', 'D', 's', 'ns'):
+    for unit in DT64_UNITS:
         cls = np.dtype(f'datetime64[{unit}]')
         key = f'dt{np.datetime_data(cls)[0]}'
         ref[key] = cls
 
-    for unit in ('Y', 'M', 'D', 's', 'ns'):
+    for unit in DT64_UNITS:
         cls = np.dtype(f'timedelta64[{unit}]')
         key = f'td{np.datetime_data(cls)[0]}'
         ref[key] = cls
@@ -139,6 +146,7 @@ def get_str_to_dtype() -> StrToType:
     for cls in (
             int,
             str,
+            bytes,
             float,
             bool,
             complex,
@@ -147,6 +155,10 @@ def get_str_to_dtype() -> StrToType:
             np.int16,
             np.int32,
             np.int64,
+            np.uint8,
+            np.uint16,
+            np.uint32,
+            np.uint64,
             np.float16,
             np.float32,
             np.float64,
@@ -155,29 +167,45 @@ def get_str_to_dtype() -> StrToType:
             np.complex128,
             ):
         ref[cls.__name__] = cls
-
     return ref
 
 
-def get_str_to_type(
-        module_sf: tp.Optional[ModuleType],
-        ) -> StrToType:
-    if module_sf is None:
-        import static_frame as sf
-        module_sf = sf
+class StrToTypeInterface:
+    '''Wrapper around StrToType mapping that provides informative key-errors.
+    '''
+    def __init__(self,
+            module_sf: tp.Optional[ModuleType] = None,
+            ):
+        if module_sf is None:
+            import static_frame as sf
+            module_sf = sf
 
-    ref = get_str_to_constructor(module_sf=module_sf)
-    ref.update(get_str_to_dtype())
-    return ref
+        self._constructor_specifiers = get_str_to_constructor(module_sf)
+        self._dtype_specifiers = get_str_to_dtype()
 
-EMPTY_ARRAY = np.array(())
+        assert len(self._constructor_specifiers.keys()
+                & self._dtype_specifiers.keys()) == 0
+        self._map = dict(chain(
+                self._constructor_specifiers.items(),
+                self._dtype_specifiers.items()
+                ))
+
+    def __getitem__(self, key: str) -> tp.Type[tp.Any]:
+        try:
+            return self._map[key]
+        except KeyError:
+            raise FrameFixtureSyntaxError(f'{key!r} is not a valid specifier. Choose a constructor specifier ({", ".join(self._constructor_specifiers.keys())}) or a dtype specifier ({", ".join(self._dtype_specifiers.keys())})') from None
+
 
 #-------------------------------------------------------------------------------
 class SourceValues:
     _SEED = 22
-    _COUNT = 0
+    _COUNT = 0 # current count; this values is mutated
+
     _INTS: np.ndarray = EMPTY_ARRAY
     _CHARS: np.ndarray = EMPTY_ARRAY
+    _BYTES: np.ndarray = EMPTY_ARRAY
+
     _SIG_DIGITS = 12
 
     _LABEL_ALPHABET = permutations(
@@ -199,7 +227,7 @@ class SourceValues:
             offset: int = 0,
             ) -> np.ndarray:
 
-        values_char = np.empty(len(array), dtype='<U4')
+        values_char = np.empty(len(array), dtype=DTYPE_STR)
         for i, v in enumerate(array):
             values_char[v - offset] = ''.join(next(cls._LABEL_ALPHABET))
 
@@ -210,7 +238,9 @@ class SourceValues:
         '''Update fixed sequences integers, characters.
         '''
         count = max(count, COUNT_INIT)
-        if count > cls._COUNT:
+
+        # NOTE: if count is more than 2x of cls._COUNT, grow in 2x iteations to always match growth done incrementall
+        while count > cls._COUNT:
             cls._COUNT = count * 2
 
             if not len(cls._INTS):
@@ -218,6 +248,7 @@ class SourceValues:
                 cls.shuffle(values_int)
                 cls._INTS = values_int
                 cls._CHARS = cls._ints_to_chars(cls._INTS)
+                cls._BYTES = cls._CHARS.astype(DTYPE_BYTES)
             else:
                 offset = len(cls._INTS)
                 values_ext = np.arange(offset, cls._COUNT, dtype=np.int64)
@@ -227,6 +258,7 @@ class SourceValues:
                         cls._CHARS,
                         cls._ints_to_chars(values_ext, offset=offset),
                         ))
+                cls._BYTES = cls._CHARS.astype(DTYPE_BYTES)
 
     @classmethod
     def dtype_to_element_iter(cls,
@@ -236,22 +268,20 @@ class SourceValues:
             ) -> tp.Iterator[tp.Any]:
 
         cls.update_primitives(count)
-        ints = cls._INTS
-        chars = cls._CHARS
 
         if dtype.kind == 'i': # int
             def gen() -> tp.Iterator[tp.Any]:
-                for v in ints:
+                for v in cls._INTS:
                     yield v * (-1 if v % 3 == 0 else 1)
 
         elif dtype.kind == 'u': # int unsigned
             def gen() -> tp.Iterator[tp.Any]:
-                yield from iter_shift(ints, 100)
+                yield from iter_shift(cls._INTS, 100)
 
         elif dtype.kind == 'f': # float
             def gen() -> tp.Iterator[tp.Any]:
                 yield np.nan
-                for v in ints:
+                for v in cls._INTS:
                     # round to avoid tiny floating-point noise
                     if v % 3 == 0:
                         yield round(v * -0.02, cls._SIG_DIGITS)
@@ -274,12 +304,16 @@ class SourceValues:
 
         elif dtype.kind == 'b': # boolean
             def gen() -> tp.Iterator[tp.Any]:
-                for v in ints:
+                for v in cls._INTS:
                     yield v % 2 == 0
 
-        elif dtype.kind in ('U', 'S'): # str
+        elif dtype.kind  == 'U': # str
             def gen() -> tp.Iterator[tp.Any]:
-                yield from chars
+                yield from cls._CHARS
+
+        elif dtype.kind == 'S': # bytes
+            def gen() -> tp.Iterator[tp.Any]:
+                yield from cls._BYTES
 
         elif dtype.kind == 'O': # object
             def gen() -> tp.Iterator[tp.Any]:
@@ -303,21 +337,20 @@ class SourceValues:
                                 shift=50,
                                 ),
                         )
-                for i in ints:
+                for i in cls._INTS:
                     for gen in gens:
                         # return at most 3 values from the gen
                         yield from take_count(gen, (i % 3) + 1)
 
         elif dtype.kind == 'M': # datetime64
             def gen() -> tp.Iterator[tp.Any]:
-                for v in ints:
+                for v in cls._INTS:
                     # NOTE: numpy ints, can use astype
-                    # yield np.datetime64(int(v), np.datetime_data(dtype)[0])
                     yield v.astype(dtype)
 
         elif dtype.kind == 'm': # timedelta64
             def gen() -> tp.Iterator[tp.Any]:
-                for v in ints:
+                for v in cls._INTS:
                     yield v.astype(dtype)
 
         else:
@@ -356,7 +389,7 @@ class SourceValues:
             for i, v in zip(range(len(array)), gen):
                 array[i] = v
         else: # string typpes
-            array = np.array([next(gen) for _ in range(count)])
+            array = np.array([next(gen) for _ in range(count)], dtype=dtype)
 
         array.flags.writeable = False
         return array
@@ -497,14 +530,14 @@ class Grammar:
 
 class GrammarDoc:
     '''
-    Tables for producing documentation of the grammar.
+    Tables for producing documentation of the grammar. These are not used at library runtime.
     '''
 
     @staticmethod
     def container_components(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for arg, label in Grammar.KNOWN.items():
@@ -524,7 +557,7 @@ class GrammarDoc:
     def specifiers_constructor(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for k, v in get_str_to_constructor(module_sf).items():
@@ -543,7 +576,7 @@ class GrammarDoc:
     def specifiers_dtype(
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
-        str_to_type = get_str_to_type(module_sf)
+        str_to_type = StrToTypeInterface(module_sf)
 
         def records() -> tp.Iterator[tp.Tuple[tp.Any, ...]]:
             for k, v in get_str_to_dtype().items():
@@ -566,7 +599,7 @@ class Fixture:
             count: int,
             constructor: ConstructorOrConstructors,
             dtype_spec: DtypeSpecOrSpecs,
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> IndexTypes:
 
         constructor_is_tuple = isinstance(constructor, tuple)
@@ -586,7 +619,7 @@ class Fixture:
                 index_constructors = constructor
             else:
                 builder = constructor #type: ignore
-                index_constructors = None #type: ignore
+                index_constructors = str_to_type['IACF']
 
             # depth of 3 will provide repeats of 4, 2, 1
             repeats = [(x * 2 if x > 0 else 1) for x in range(len(dtype_spec)-1, -1, -1)]
@@ -610,7 +643,7 @@ class Fixture:
     def _build_type_blocks(
             shape: ShapeType,
             dtype_specs: tp.Sequence[DtypeSpecOrSpecs],
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> 'TypeBlocks':
 
         count_row, count_col = shape
@@ -632,7 +665,7 @@ class Fixture:
     @staticmethod
     def _str_to_build(
             constructor: StrConstructorType, # typle of elements or tuples
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> BuildType:
         '''Convert strings to types or SF classes.
         '''
@@ -647,7 +680,7 @@ class Fixture:
     @classmethod
     def _to_containers(cls,
             constructors: StrConstructorsType,
-            str_to_type: StrToType,
+            str_to_type: StrToTypeInterface,
             ) -> tp.Tuple['TypeBlocks',
                     tp.Optional[IndexTypes],
                     tp.Optional[IndexTypes],
@@ -702,7 +735,7 @@ class Fixture:
             module_sf: tp.Optional[ModuleType] = None,
             ) -> 'Frame':
 
-        str_to_type = get_str_to_type(
+        str_to_type = StrToTypeInterface(
                 module_sf=module_sf,
                 )
         constructors = Grammar.dsl_to_str_constructors(dsl)
