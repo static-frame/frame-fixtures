@@ -101,7 +101,7 @@ def get_str_to_constructor(
         import static_frame as sf
         module_sf = sf
 
-    # NOTE: IndexMillisecond, IndexMicrosecond cannot be used as encoded;
+    # NOTE: IndexHour, IndexMillisecond, IndexMicrosecond cannot be used as abreviated here because they would collide with IndexHierarchy or themselves; would need to chagne encoding
     ref = {}
     for cls in (
             module_sf.TypeBlocks, #type: ignore
@@ -165,9 +165,7 @@ def get_str_to_dtype() -> StrToType:
             np.complex128,
             ):
         ref[cls.__name__] = cls
-
     return ref
-
 
 def get_str_to_type(
         module_sf: tp.Optional[ModuleType],
