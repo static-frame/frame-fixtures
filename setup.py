@@ -67,7 +67,7 @@ setup(
     python_requires='>3.7.0',
     install_requires=list(get_install_requires()),
     extras_require=get_extras_require(),
-    url='https://github.com/InvestmentSystems/frame-fixtures',
+    url='https://github.com/static-frame/frame-fixtures',
     author='Christopher Ariza',
     license='MIT',
 
