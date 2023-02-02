@@ -19,8 +19,6 @@ def clean(context):
     context.run('rm -rf .mypy_cache')
     context.run('rm -rf .pytest_cache')
 
-
-
 #-------------------------------------------------------------------------------
 
 @invoke.task
