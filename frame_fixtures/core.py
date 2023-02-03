@@ -112,20 +112,35 @@ def get_str_to_constructor(
             module_sf.IndexGO, #type: ignore
             module_sf.IndexHierarchy, #type: ignore
             module_sf.IndexHierarchyGO, #type: ignore
-            module_sf.IndexYear, #type: ignore
-            module_sf.IndexYearGO, #type: ignore
-            module_sf.IndexYearMonth, #type: ignore
-            module_sf.IndexYearMonthGO, #type: ignore
-            module_sf.IndexDate, #type: ignore
-            module_sf.IndexDateGO, #type: ignore
-            module_sf.IndexSecond, #type: ignore
-            module_sf.IndexSecondGO, #type: ignore
-            module_sf.IndexNanosecond, #type: ignore
-            module_sf.IndexNanosecondGO, #type: ignore
             module_sf.IndexAutoConstructorFactory, #type: ignore
             ):
         key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
         ref[key] = cls
+
+    for (cls, label) in (
+            (module_sf.IndexYear, 'IY'), #type: ignore
+            (module_sf.IndexYearGO, 'IYg'), #type: ignore
+            (module_sf.IndexYearMonth, 'IM'), #type: ignore
+            (module_sf.IndexYearMonthGO, 'IMg'), #type: ignore
+            (module_sf.IndexYearMonth, 'IYM'), #type: ignore
+            (module_sf.IndexYearMonthGO, 'IYMg'), #type: ignore
+            (module_sf.IndexDate, 'ID'), #type: ignore
+            (module_sf.IndexDateGO, 'IDg'), #type: ignore
+            (module_sf.IndexHour, 'Ih'), #type: ignore
+            (module_sf.IndexHourGO, 'Ihg'), #type: ignore
+            (module_sf.IndexMinute, 'Im'), #type: ignore
+            (module_sf.IndexMinuteGO, 'Img'), #type: ignore
+            (module_sf.IndexSecond, 'Is'), #type: ignore
+            (module_sf.IndexSecondGO, 'Isg'), #type: ignore
+            (module_sf.IndexMillisecond, 'Ims'), #type: ignore
+            (module_sf.IndexMillisecondGO, 'Imsg'), #type: ignore
+            (module_sf.IndexMicrosecond, 'Ius'), #type: ignore
+            (module_sf.IndexMicrosecondGO, 'Iusg'), #type: ignore
+            (module_sf.IndexNanosecond, 'Ins'), #type: ignore
+            (module_sf.IndexNanosecondGO, 'Insg'), #type: ignore
+            ):
+        ref[label] = cls
+
     return ref
 
 

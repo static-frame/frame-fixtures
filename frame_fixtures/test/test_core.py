@@ -14,6 +14,7 @@ from frame_fixtures.core import GrammarDoc
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
 from frame_fixtures.core import StrToTypeInterface
+from frame_fixtures.core import DT64_UNITS
 
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
@@ -145,7 +146,7 @@ def test_grammer_a() -> None:
 
 def test_fixture_to_frame_a() -> None:
     # msg1 = 'f(Fg)|i(I,str)|c(IDg,dtD)|v(float)|s(4,6)'
-    msg = 'f(F)|i((I,I),(str,int))|c((IS,I),(dts,int))|v(str,bool,object)|s(4,6)'
+    msg = 'f(F)|i((I,I),(str,int))|c((Is,I),(dts,int))|v(str,bool,object)|s(4,6)'
     f1 = Fixture.parse(msg)
 
     assert f1.to_pairs(0) == (((datetime.datetime(1970, 1, 1, 9, 38, 35), 105269), ((('zZbu', 105269), 'zjZQ'), (('zZbu', 119909), 'zO5l'), (('ztsv', 194224), 'zEdH'), (('ztsv', 172133), 'zB7E'))), ((datetime.datetime(1970, 1, 1, 9, 38, 35), 119909), ((('zZbu', 105269), False), (('zZbu', 119909), False), (('ztsv', 194224), False), (('ztsv', 172133), False))), ((datetime.datetime(1970, 1, 1, 1, 0, 48), 194224), ((('zZbu', 105269), True), (('zZbu', 119909), False), (('ztsv', 194224), 105269), (('ztsv', 172133), 119909))), ((datetime.datetime(1970, 1, 1, 1, 0, 48), 172133), ((('zZbu', 105269), 'z2Oo'), (('zZbu', 119909), 'z5l6'), (('ztsv', 194224), 'zCE3'), (('ztsv', 172133), 'zr4u'))), ((datetime.datetime(1970, 1, 2, 1, 21, 41), 96520), ((('zZbu', 105269), True), (('zZbu', 119909), True), (('ztsv', 194224), True), (('ztsv', 172133), False))), ((datetime.datetime(1970, 1, 2, 1, 21, 41), -88017), ((('zZbu', 105269), 92867), (('zZbu', 119909), 3884.98), (('ztsv', 194224), -646.86), (('ztsv', 172133), -314.34))))
@@ -214,6 +215,9 @@ def test_grammar_definition() -> None:
     cc = GrammarDoc.specifiers_dtype()
 
 
+#-------------------------------------------------------------------------------
+def test_index_dt64_a() -> None:
 
-
-
+    for u in DT64_UNITS:
+        f = Fixture.parse(f's(3,2)|i(I{u}, dt{u})')
+        assert f.index.dtype == np.dtype(f'datetime64[{u}]')

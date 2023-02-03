@@ -161,9 +161,15 @@ CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as th
 +-------+---------------------------+
 |IHg    |IndexHierarchyGO           |
 +-------+---------------------------+
+|IACF   |IndexAutoConstructorFactory|
++-------+---------------------------+
 |IY     |IndexYear                  |
 +-------+---------------------------+
 |IYg    |IndexYearGO                |
++-------+---------------------------+
+|IM     |IndexYearMonth             |
++-------+---------------------------+
+|IMg    |IndexYearMonthGO           |
 +-------+---------------------------+
 |IYM    |IndexYearMonth             |
 +-------+---------------------------+
@@ -173,15 +179,29 @@ CSs are given to the ``f`` CC; the ``i`` and ``c`` CC take one or many CSs as th
 +-------+---------------------------+
 |IDg    |IndexDateGO                |
 +-------+---------------------------+
-|IS     |IndexSecond                |
+|Ih     |IndexHour                  |
 +-------+---------------------------+
-|ISg    |IndexSecondGO              |
+|Ihg    |IndexHourGO                |
 +-------+---------------------------+
-|IN     |IndexNanosecond            |
+|Im     |IndexMinute                |
 +-------+---------------------------+
-|INg    |IndexNanosecondGO          |
+|Img    |IndexMinuteGO              |
 +-------+---------------------------+
-|IACF   |IndexAutoConstructorFactory|
+|Is     |IndexSecond                |
++-------+---------------------------+
+|Isg    |IndexSecondGO              |
++-------+---------------------------+
+|Ims    |IndexMillisecond           |
++-------+---------------------------+
+|Imsg   |IndexMillisecondGO         |
++-------+---------------------------+
+|Ius    |IndexMicrosecond           |
++-------+---------------------------+
+|Iusg   |IndexMicrosecondGO         |
++-------+---------------------------+
+|Ins    |IndexNanosecond            |
++-------+---------------------------+
+|Insg   |IndexNanosecondGO          |
 +-------+---------------------------+
 
 
