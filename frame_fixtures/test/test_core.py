@@ -14,6 +14,7 @@ from frame_fixtures.core import GrammarDoc
 from frame_fixtures.core import FrameFixtureSyntaxError
 from frame_fixtures.core import repeat_count
 from frame_fixtures.core import StrToTypeInterface
+from frame_fixtures.core import DT64_UNITS
 
 def test_iter_shift_a() -> None:
     assert list(iter_shift(range(5), 3, wrap=True)) == [3, 4, 0, 1, 2]
@@ -214,6 +215,9 @@ def test_grammar_definition() -> None:
     cc = GrammarDoc.specifiers_dtype()
 
 
+#-------------------------------------------------------------------------------
+def test_index_dt64_a() -> None:
 
-
-
+    for u in DT64_UNITS:
+        f = Fixture.parse(f's(3,2)|i(I{u}, dt{u})')
+        assert f.index.dtype == np.dtype(f'datetime64[{u}]')
