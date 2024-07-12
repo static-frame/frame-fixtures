@@ -1,6 +1,6 @@
 import datetime
 
-import numpy as np #type: ignore
+import numpy as np
 import pytest
 
 from frame_fixtures.core import Fixture
@@ -220,4 +220,4 @@ def test_index_dt64_a() -> None:
 
     for u in DT64_UNITS:
         f = Fixture.parse(f's(3,2)|i(I{u}, dt{u})')
-        assert f.index.dtype == np.dtype(f'datetime64[{u}]')
+        assert f.index.dtype == np.dtype(f'datetime64[{u}]') # type: ignore
