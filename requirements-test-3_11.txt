@@ -1,0 +1,5 @@
+invoke==2.2.0
+numpy==1.26.4
+pytest==8.2.2
+pytest-cov==4.0.0
+static-frame==2.9.0

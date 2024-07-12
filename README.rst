@@ -23,7 +23,7 @@ frame-fixtures
 The FrameFixtures library defines a tiny domain-specific language that permits using compact expressions to create diverse, deterministic DataFrame fixtures with StaticFrame. The resulting ``Frame`` can be used for test, performance studies, or documentation examples, and can easily be converted to Pandas DataFrames or other representations available via StaticFrame.
 
 
-Code: https://github.com/InvestmentSystems/frame-fixtures
+Code: https://github.com/static-frame/frame-fixtures
 
 Packages: https://pypi.org/project/frame-fixtures
 

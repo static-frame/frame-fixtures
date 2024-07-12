@@ -11,11 +11,6 @@ import typing as tp
 # twine upload dist/*
 # rm -r build; rm -r dist; rm -r *.egg-info
 
-# in /static-frame-feedstock/recipe
-# update meta.yaml in feedstock: set version and tar sha256 for tar, commit and push
-# submit PR to conda-forge/static-frame-feedstock from fork
-# merge into conda forge feedstock after all checks pass
-
 ROOT_DIR_FP = path.abspath(path.dirname(__file__))
 
 def get_long_description() -> str:
@@ -64,7 +59,7 @@ setup(
     version=get_version(),
     description='Use compact expressions to create diverse, deterministic DataFrame fixtures with StaticFrame',
     long_description=get_long_description(),
-    python_requires='>3.7.0',
+    python_requires='>=3.9',
     install_requires=list(get_install_requires()),
     extras_require=get_extras_require(),
     url='https://github.com/static-frame/frame-fixtures',
@@ -82,11 +77,10 @@ setup(
             'Operating System :: MacOS :: MacOS X',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
             'Programming Language :: Python :: 3.10',
             'Programming Language :: Python :: 3.11',
+            'Programming Language :: Python :: 3.12',
             ],
 
     keywords='dataframe fixtures test staticframe pandas numpy',

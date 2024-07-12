@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as tp
 from types import ModuleType
 import ast
@@ -6,15 +8,24 @@ from functools import lru_cache
 import string
 from itertools import permutations
 
-import numpy as np #type: ignore
+import numpy as np
 
 if tp.TYPE_CHECKING:
-    from static_frame import Frame #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.util import DtypeSpecifier #pylint: disable=W0611 #pragma: no cover
-    from static_frame.core.container import ContainerOperand #pylint: disable=W0611 #pragma: no cover
-    from static_frame import Index #pylint: disable=W0611 #pragma: no cover
-    from static_frame import IndexHierarchy #pylint: disable=W0611 #pragma: no cover
-    from static_frame import TypeBlocks #pylint: disable=W0611 #pragma: no cover
+    from static_frame import Frame #pragma: no cover
+    from static_frame.core.util import TDtypeSpecifier #pragma: no cover
+    from static_frame.core.container import ContainerOperand #pragma: no cover
+    from static_frame import Index #pragma: no cover
+    from static_frame import IndexHierarchy #pragma: no cover
+    from static_frame import TypeBlocks #pragma: no cover
+
+    TNDArrayAny = np.ndarray[tp.Any, tp.Any]
+    # TNDArrayBool = np.ndarray[tp.Any, np.dtype[np.bool_]]
+    # TNDArrayObject = np.ndarray[tp.Any, np.dtype[np.object_]]
+    # TNDArrayIntDefault = np.ndarray[tp.Any, np.dtype[np.int64]]
+
+    TDtypeAny = np.dtype[tp.Any]
+    # TDtypeObject = np.dtype[np.object_] #pragma: no cover
+
 
 
 StrToType = tp.Dict[str, tp.Type[tp.Any]]
@@ -27,11 +38,11 @@ ConstructorOrConstructors = tp.Union[
         tp.Type['ContainerOperand'],
         tp.Tuple[tp.Type['ContainerOperand'], ...]
         ]
-DtypeSpecOrSpecs = tp.Union['DtypeSpecifier', tp.Tuple['DtypeSpecifier', ...]]
+DtypeSpecOrSpecs = tp.Union['TDtypeSpecifier', tp.Tuple['TDtypeSpecifier', ...]]
 
-BuildElement = tp.Union[tp.Type['ContainerOperand'], 'DtypeSpecifier']
+BuildElement = tp.Union[tp.Type['ContainerOperand'], 'TDtypeSpecifier']
 BuildArg = tp.Union[BuildElement, tp.Tuple[BuildElement]]
-BuildType = tp.Tuple[BuildArg, ...]
+TBuildType = tp.Tuple[BuildArg, ...]
 
 ShapeType = tp.Tuple[int, int]
 IndexTypes = tp.Union['Index', 'IndexHierarchy']
@@ -49,7 +60,7 @@ DTYPE_KINDS_NO_FROMITER = ('O', 'U', 'S')
 DT64_UNITS = ('Y', 'M', 'D', 'h', 'm', 's', 'ms', 'us', 'ns')
 
 COUNT_INIT = 100_000 # will be doubled on first usage
-EMPTY_ARRAY = np.array(())
+EMPTY_ARRAY: TNDArrayAny = np.array(())
 
 
 #-------------------------------------------------------------------------------
@@ -105,39 +116,39 @@ def get_str_to_constructor(
     # NOTE: IndexHour, IndexMillisecond, IndexMicrosecond cannot be used as abreviated here because they would collide with IndexHierarchy or themselves; would need to chagne encoding
     ref = {}
     for cls in (
-            module_sf.TypeBlocks, #type: ignore
-            module_sf.Frame, #type: ignore
-            module_sf.FrameGO, #type: ignore
-            module_sf.Index, #type: ignore
-            module_sf.IndexGO, #type: ignore
-            module_sf.IndexHierarchy, #type: ignore
-            module_sf.IndexHierarchyGO, #type: ignore
-            module_sf.IndexAutoConstructorFactory, #type: ignore
+            module_sf.TypeBlocks,
+            module_sf.Frame,
+            module_sf.FrameGO,
+            module_sf.Index,
+            module_sf.IndexGO,
+            module_sf.IndexHierarchy,
+            module_sf.IndexHierarchyGO,
+            module_sf.IndexAutoConstructorFactory,
             ):
         key = ''.join(c for c in cls.__name__ if c.isupper()).replace('GO', 'g')
         ref[key] = cls
 
     for (cls, label) in (
-            (module_sf.IndexYear, 'IY'), #type: ignore
-            (module_sf.IndexYearGO, 'IYg'), #type: ignore
-            (module_sf.IndexYearMonth, 'IM'), #type: ignore
-            (module_sf.IndexYearMonthGO, 'IMg'), #type: ignore
-            (module_sf.IndexYearMonth, 'IYM'), #type: ignore
-            (module_sf.IndexYearMonthGO, 'IYMg'), #type: ignore
-            (module_sf.IndexDate, 'ID'), #type: ignore
-            (module_sf.IndexDateGO, 'IDg'), #type: ignore
-            (module_sf.IndexHour, 'Ih'), #type: ignore
-            (module_sf.IndexHourGO, 'Ihg'), #type: ignore
-            (module_sf.IndexMinute, 'Im'), #type: ignore
-            (module_sf.IndexMinuteGO, 'Img'), #type: ignore
-            (module_sf.IndexSecond, 'Is'), #type: ignore
-            (module_sf.IndexSecondGO, 'Isg'), #type: ignore
-            (module_sf.IndexMillisecond, 'Ims'), #type: ignore
-            (module_sf.IndexMillisecondGO, 'Imsg'), #type: ignore
-            (module_sf.IndexMicrosecond, 'Ius'), #type: ignore
-            (module_sf.IndexMicrosecondGO, 'Iusg'), #type: ignore
-            (module_sf.IndexNanosecond, 'Ins'), #type: ignore
-            (module_sf.IndexNanosecondGO, 'Insg'), #type: ignore
+            (module_sf.IndexYear, 'IY'),
+            (module_sf.IndexYearGO, 'IYg'),
+            (module_sf.IndexYearMonth, 'IM'),
+            (module_sf.IndexYearMonthGO, 'IMg'),
+            (module_sf.IndexYearMonth, 'IYM'),
+            (module_sf.IndexYearMonthGO, 'IYMg'),
+            (module_sf.IndexDate, 'ID'),
+            (module_sf.IndexDateGO, 'IDg'),
+            (module_sf.IndexHour, 'Ih'),
+            (module_sf.IndexHourGO, 'Ihg'),
+            (module_sf.IndexMinute, 'Im'),
+            (module_sf.IndexMinuteGO, 'Img'),
+            (module_sf.IndexSecond, 'Is'),
+            (module_sf.IndexSecondGO, 'Isg'),
+            (module_sf.IndexMillisecond, 'Ims'),
+            (module_sf.IndexMillisecondGO, 'Imsg'),
+            (module_sf.IndexMicrosecond, 'Ius'),
+            (module_sf.IndexMicrosecondGO, 'Iusg'),
+            (module_sf.IndexNanosecond, 'Ins'),
+            (module_sf.IndexNanosecondGO, 'Insg'),
             ):
         ref[label] = cls
 
@@ -148,6 +159,7 @@ def get_str_to_dtype() -> StrToType:
     '''Get a mapping from a string representation to a dtype specifier (not always a dtype)
     '''
     ref = {}
+    cls: tp.Any
     for unit in DT64_UNITS:
         cls = np.dtype(f'datetime64[{unit}]')
         key = f'dt{np.datetime_data(cls)[0]}'
@@ -217,9 +229,9 @@ class SourceValues:
     _SEED = 22
     _COUNT = 0 # current count; this values is mutated
 
-    _INTS: np.ndarray = EMPTY_ARRAY
-    _CHARS: np.ndarray = EMPTY_ARRAY
-    _BYTES: np.ndarray = EMPTY_ARRAY
+    _INTS = EMPTY_ARRAY
+    _CHARS = EMPTY_ARRAY
+    _BYTES = EMPTY_ARRAY
 
     _SIG_DIGITS = 12
 
@@ -230,7 +242,7 @@ class SourceValues:
     # 62 options in groups of 4 gives 13,388,280 permutations
 
     @classmethod
-    def shuffle(cls, mutable: np.ndarray) -> None:
+    def shuffle(cls, mutable: TNDArrayAny) -> None:
         state = np.random.get_state()
         np.random.seed(cls._SEED)
         np.random.shuffle(mutable)
@@ -238,9 +250,9 @@ class SourceValues:
 
     @classmethod
     def _ints_to_chars(cls,
-            array: np.ndarray,
+            array: TNDArrayAny,
             offset: int = 0,
-            ) -> np.ndarray:
+            ) -> TNDArrayAny:
 
         values_char = np.empty(len(array), dtype=DTYPE_STR)
         for i, v in enumerate(array):
@@ -277,7 +289,7 @@ class SourceValues:
 
     @classmethod
     def dtype_to_element_iter(cls,
-            dtype: np.dtype,
+            dtype: TDtypeAny,
             count: int = COUNT_INIT,
             shift: int = 0,
             ) -> tp.Iterator[tp.Any]:
@@ -381,11 +393,11 @@ class SourceValues:
 
     @classmethod
     def dtype_to_array(cls,
-            dtype: np.dtype,
+            dtype: TDtypeAny,
             count: int = COUNT_INIT,
             shift: int = 0,
             gen: tp.Optional[tp.Iterator[tp.Any]] = None,
-            ) -> np.ndarray:
+            ) -> TNDArrayAny:
         '''
         Args:
             gen: optionally supply a generator of values
@@ -415,7 +427,7 @@ class SourceValues:
             dtype_spec: DtypeSpecOrSpecs,
             count: int = COUNT_INIT,
             shift: int = 0,
-            ) -> np.ndarray:
+            ) -> TNDArrayAny:
 
         if isinstance(dtype_spec, tuple):
             # an object type of tuples
@@ -664,7 +676,7 @@ class Fixture:
         count_row, count_col = shape
         count_dtype = len(dtype_specs)
 
-        def gen() -> tp.Iterator[np.ndarray]:
+        def gen() -> tp.Iterator[TNDArrayAny]:
             ints = SourceValues.dtype_to_array(DTYPE_INT, count=count_col)
             max_shift = 100
 
@@ -681,13 +693,13 @@ class Fixture:
     def _str_to_build(
             constructor: StrConstructorType, # typle of elements or tuples
             str_to_type: StrToTypeInterface,
-            ) -> BuildType:
+            ) -> TBuildType:
         '''Convert strings to types or SF classes.
         '''
         def gen() -> tp.Iterator[BuildArg]:
             for v in constructor:
                 if isinstance(v, tuple):
-                    yield tuple(str_to_type[part] for part in v)
+                    yield tuple(str_to_type[part] for part in v) # type: ignore
                 else:
                     yield str_to_type[v]
         return tuple(gen())
@@ -721,12 +733,12 @@ class Fixture:
                     )
             index = cls._build_index(
                     shape[0],
-                    constructor, #type: ignore
+                    constructor, # type: ignore
                     dtype_spec,
                     str_to_type,
                     )
         else:
-            index = None #type: ignore
+            index = None
 
         if 'c' in constructors and constructors['c']:
             constructor, dtype_spec = cls._str_to_build(
@@ -735,12 +747,12 @@ class Fixture:
                     )
             columns = cls._build_index(
                     shape[1],
-                    constructor, #type: ignore
+                    constructor, # type: ignore
                     dtype_spec,
                     str_to_type,
                     )
         else:
-            columns = None #type: ignore
+            columns = None
 
         return tb, index, columns
 
