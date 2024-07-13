@@ -224,7 +224,7 @@ def test_index_dt64_a() -> None:
 
 
 #-------------------------------------------------------------------------------
-def test_int8() -> None:
+def test_i8() -> None:
     dt64 = np.datetime64
     f1 = Fixture.parse('s(2,4)|v(int8,str)|i(ID,dtD)|c(ID,dtD)').rename('x', index='y', columns='z')
     assert(f1.to_pairs() ==
@@ -235,3 +235,40 @@ def test_int8() -> None:
     # 2065-01-17      47         zaji       -64        z2Oo
     # 1979-12-28      -61        zJnC       -91        z5l6
     # <datetime64[D]> <int8>     <<U4>      <int8>     <<U4>
+
+def test_i16() -> None:
+    f1 = Fixture.parse('s(2,4)|v(int16,str)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.int16(-22481)), (np.int64(1), np.int16(27331)))), (np.int64(1), ((np.int64(0), np.str_('zaji')), (np.int64(1), np.str_('zJnC')))), (np.int64(2), ((np.int64(0), np.int16(-3648)), (np.int64(1), np.int16(25765)))), (np.int64(3), ((np.int64(0), np.str_('z2Oo')), (np.int64(1), np.str_('z5l6'))))))
+
+def test_i32() -> None:
+    f1 = Fixture.parse('s(2,4)|v(int32,str)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.int32(-88017)), (np.int64(1), np.int32(92867)))), (np.int64(1), ((np.int64(0), np.str_('zaji')), (np.int64(1), np.str_('zJnC')))), (np.int64(2), ((np.int64(0), np.int32(-3648)), (np.int64(1), np.int32(91301)))), (np.int64(3), ((np.int64(0), np.str_('z2Oo')), (np.int64(1), np.str_('z5l6'))))))
+
+def test_u8() -> None:
+    f1 = Fixture.parse('s(4,10)|v(uint8,uint8)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.uint8(146)), (np.int64(1), np.uint8(61)), (np.int64(2), np.uint8(67)), (np.int64(3), np.uint8(56)))), (np.int64(1), ((np.int64(0), np.uint8(150)), (np.int64(1), np.uint8(250)), (np.int64(2), np.uint8(100)), (np.int64(3), np.uint8(254)))), (np.int64(2), ((np.int64(0), np.uint8(94)), (np.int64(1), np.uint8(182)), (np.int64(2), np.uint8(201)), (np.int64(3), np.uint8(87)))), (np.int64(3), ((np.int64(0), np.uint8(101)), (np.int64(1), np.uint8(1)), (np.int64(2), np.uint8(96)), (np.int64(3), np.uint8(212)))), (np.int64(4), ((np.int64(0), np.uint8(245)), (np.int64(1), np.uint8(246)), (np.int64(2), np.uint8(204)), (np.int64(3), np.uint8(140)))), (np.int64(5), ((np.int64(0), np.uint8(67)), (np.int64(1), np.uint8(56)), (np.int64(2), np.uint8(73)), (np.int64(3), np.uint8(245)))), (np.int64(6), ((np.int64(0), np.uint8(246)), (np.int64(1), np.uint8(204)), (np.int64(2), np.uint8(140)), (np.int64(3), np.uint8(69)))), (np.int64(7), ((np.int64(0), np.uint8(69)), (np.int64(1), np.uint8(129)), (np.int64(2), np.uint8(82)), (np.int64(3), np.uint8(115)))), (np.int64(8), ((np.int64(0), np.uint8(202)), (np.int64(1), np.uint8(228)), (np.int64(2), np.uint8(94)), (np.int64(3), np.uint8(190)))), (np.int64(9), ((np.int64(0), np.uint8(179)), (np.int64(1), np.uint8(147)), (np.int64(2), np.uint8(142)), (np.int64(3), np.uint8(14))))))
+
+def test_u16() -> None:
+    f1 = Fixture.parse('s(4,10)|v(uint16,uint16)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.uint16(57746)), (np.int64(1), np.uint16(3389)), (np.int64(2), np.uint16(62787)), (np.int64(3), np.uint16(35128)))), (np.int64(1), ((np.int64(0), np.uint16(55958)), (np.int64(1), np.uint16(31994)), (np.int64(2), np.uint16(31332)), (np.int64(3), np.uint16(58622)))), (np.int64(2), ((np.int64(0), np.uint16(57438)), (np.int64(1), np.uint16(61878)), (np.int64(2), np.uint16(63177)), (np.int64(3), np.uint16(32343)))), (np.int64(3), ((np.int64(0), np.uint16(15717)), (np.int64(1), np.uint16(13057)), (np.int64(2), np.uint16(53344)), (np.int64(3), np.uint16(63188)))), (np.int64(4), ((np.int64(0), np.uint16(52469)), (np.int64(1), np.uint16(1526)), (np.int64(2), np.uint16(39628)), (np.int64(3), np.uint16(40588)))), (np.int64(5), ((np.int64(0), np.uint16(62787)), (np.int64(1), np.uint16(35128)), (np.int64(2), np.uint16(47433)), (np.int64(3), np.uint16(52469)))), (np.int64(6), ((np.int64(0), np.uint16(1526)), (np.int64(1), np.uint16(39628)), (np.int64(2), np.uint16(40588)), (np.int64(3), np.uint16(31045)))), (np.int64(7), ((np.int64(0), np.uint16(31045)), (np.int64(1), np.uint16(63361)), (np.int64(2), np.uint16(35154)), (np.int64(3), np.uint16(29043)))), (np.int64(8), ((np.int64(0), np.uint16(4042)), (np.int64(1), np.uint16(49636)), (np.int64(2), np.uint16(12894)), (np.int64(3), np.uint16(64446)))), (np.int64(9), ((np.int64(0), np.uint16(64691)), (np.int64(1), np.uint16(9619)), (np.int64(2), np.uint16(910)), (np.int64(3), np.uint16(8206))))))
+
+def test_u32() -> None:
+    f1 = Fixture.parse('s(4,10)|v(uint32,uint32)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.uint32(188818)), (np.int64(1), np.uint32(68925)), (np.int64(2), np.uint32(62787)), (np.int64(3), np.uint32(166200)))), (np.int64(1), ((np.int64(0), np.uint32(187030)), (np.int64(1), np.uint32(163066)), (np.int64(2), np.uint32(31332)), (np.int64(3), np.uint32(189694)))), (np.int64(2), ((np.int64(0), np.uint32(188510)), (np.int64(1), np.uint32(61878)), (np.int64(2), np.uint32(194249)), (np.int64(3), np.uint32(32343)))), (np.int64(3), ((np.int64(0), np.uint32(15717)), (np.int64(1), np.uint32(144129)), (np.int64(2), np.uint32(118880)), (np.int64(3), np.uint32(128724)))), (np.int64(4), ((np.int64(0), np.uint32(183541)), (np.int64(1), np.uint32(67062)), (np.int64(2), np.uint32(170700)), (np.int64(3), np.uint32(40588)))), (np.int64(5), ((np.int64(0), np.uint32(62787)), (np.int64(1), np.uint32(166200)), (np.int64(2), np.uint32(178505)), (np.int64(3), np.uint32(183541)))), (np.int64(6), ((np.int64(0), np.uint32(67062)), (np.int64(1), np.uint32(170700)), (np.int64(2), np.uint32(40588)), (np.int64(3), np.uint32(162117)))), (np.int64(7), ((np.int64(0), np.uint32(162117)), (np.int64(1), np.uint32(128897)), (np.int64(2), np.uint32(100690)), (np.int64(3), np.uint32(29043)))), (np.int64(8), ((np.int64(0), np.uint32(69578)), (np.int64(1), np.uint32(180708)), (np.int64(2), np.uint32(143966)), (np.int64(3), np.uint32(129982)))), (np.int64(9), ((np.int64(0), np.uint32(195763)), (np.int64(1), np.uint32(9619)), (np.int64(2), np.uint32(910)), (np.int64(3), np.uint32(73742))))))
+
+def test_f16() -> None:
+    f1 = Fixture.parse('s(4,3)|v(float16,float16)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.float16(1930.0)), (np.int64(1), np.float16(-1760.0)), (np.int64(2), np.float16(1857.0)), (np.int64(3), np.float16(1699.0)))), (np.int64(1), ((np.int64(0), np.float16(-611.0)), (np.int64(1), np.float16(3244.0)), (np.int64(2), np.float16(-823.0)), (np.int64(3), np.float16(114.56)))), (np.int64(2), ((np.int64(0), np.float16(694.5)), (np.int64(1), np.float16(-72.94)), (np.int64(2), np.float16(1826.0)), (np.int64(3), np.float16(604.0))))))
+
+def test_f32() -> None:
+    f1 = Fixture.parse('s(4,3)|v(float32,float32)')
+    assert (f1.to_pairs() ==
+            ((np.int64(0), ((np.int64(0), np.float32(1930.4)), (np.int64(1), np.float32(-1760.34)), (np.int64(2), np.float32(1857.34)), (np.int64(3), np.float32(1699.34)))), (np.int64(1), ((np.int64(0), np.float32(-610.8)), (np.int64(1), np.float32(3243.94)), (np.int64(2), np.float32(-823.14)), (np.int64(3), np.float32(114.58)))), (np.int64(2), ((np.int64(0), np.float32(694.3)), (np.int64(1), np.float32(-72.96)), (np.int64(2), np.float32(1826.02)), (np.int64(3), np.float32(604.1))))))
+
+

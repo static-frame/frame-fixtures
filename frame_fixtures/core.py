@@ -216,8 +216,6 @@ class StrToTypeInterface:
         except KeyError:
             raise FrameFixtureSyntaxError(f'{key!r} is not a valid specifier. Choose a constructor specifier ({", ".join(self._constructor_specifiers.keys())}) or a dtype specifier ({", ".join(self._dtype_specifiers.keys())})') from None
 
-
-
 #-------------------------------------------------------------------------------
 class SourceValues:
     _SEED = 22
@@ -292,7 +290,6 @@ class SourceValues:
         cls.update_primitives(count)
 
         if dtype.kind == 'i': # int
-            # print('len', count, dtype)
             if dtype == cls._INTS_DTYPE:
                 def gen() -> tp.Iterator[tp.Any]:
                     for v in cls._INTS:
@@ -300,6 +297,7 @@ class SourceValues:
             else:
                 def gen() -> tp.Iterator[tp.Any]:
                     for v in cls._INTS:
+                        # NOTE: have to astype here with NumPy2, as fromiter rejects casting
                         yield v.astype(dtype) * (-1 if v % 3 == 0 else 1)
 
         elif dtype.kind == 'u': # int unsigned
