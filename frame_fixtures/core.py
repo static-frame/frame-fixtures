@@ -222,7 +222,7 @@ class SourceValues:
     _COUNT = 0 # current count; this values is mutated
 
     _INTS = EMPTY_ARRAY # will be a numpy array of int64
-    _INTS_DTYPE = np.dtype(np.int64);
+    _INTS_DTYPE = np.dtype(np.int64)
     _CHARS = EMPTY_ARRAY
     _BYTES = EMPTY_ARRAY
 
