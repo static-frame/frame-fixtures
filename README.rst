@@ -9,12 +9,8 @@
   :target: https://codecov.io/gh/static-frame/frame-fixtures
 
 
-.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/test.yml?branch=main&label=test&logo=Github
-  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/test.yml
-
-.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/quality.yml?branch=main&label=quality&logo=Github
-  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/quality.yml
-
+.. image:: https://img.shields.io/github/actions/workflow/status/static-frame/frame-fixtures/ci.yml?branch=main&label=ci&logo=Github
+  :target: https://github.com/static-frame/frame-fixtures/actions/workflows/ci.yml
 
 
 frame-fixtures
