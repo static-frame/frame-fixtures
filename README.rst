@@ -121,6 +121,11 @@ What is New in FramFixtures
 
 Now compatible with NumPy 2.0.
 
+1.0.0
+............
+
+Updated case of ``Index`` ``datetime64`` identifiers to use standard case; ``IS``, for example, is ``Is``.
+
 
 Grammar
 ------------------------------
