@@ -18,8 +18,8 @@ if tp.TYPE_CHECKING:
     from static_frame import IndexHierarchy #pragma: no cover
     from static_frame import TypeBlocks #pragma: no cover
 
-    TNDArrayAny = np.ndarray[tp.Any, tp.Any]
-    TDtypeAny = np.dtype[tp.Any]
+    TNDArrayAny = np.ndarray[tp.Any, tp.Any] #pragma: no cover
+    TDtypeAny = np.dtype[tp.Any] #pragma: no cover
 
 
 TStrToType = tp.Dict[str, tp.Type[tp.Any]]
