@@ -19,33 +19,26 @@ if tp.TYPE_CHECKING:
     from static_frame import TypeBlocks #pragma: no cover
 
     TNDArrayAny = np.ndarray[tp.Any, tp.Any]
-    # TNDArrayBool = np.ndarray[tp.Any, np.dtype[np.bool_]]
-    # TNDArrayObject = np.ndarray[tp.Any, np.dtype[np.object_]]
-    # TNDArrayIntDefault = np.ndarray[tp.Any, np.dtype[np.int64]]
-
     TDtypeAny = np.dtype[tp.Any]
-    # TDtypeObject = np.dtype[np.object_] #pragma: no cover
 
 
+TStrToType = tp.Dict[str, tp.Type[tp.Any]]
+TStrConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
+TStrConstructorType = tp.Tuple[TStrConstructorArg, ...]
+TStrConstructorsType = tp.Dict[str, TStrConstructorType]
 
-StrToType = tp.Dict[str, tp.Type[tp.Any]]
-StrConstructorArg = tp.Union[str, tp.Tuple[str, ...]]
-StrConstructorType = tp.Tuple[StrConstructorArg, ...]
-StrConstructorsType = tp.Dict[str, StrConstructorType]
-
-
-ConstructorOrConstructors = tp.Union[
+TConstructorOrConstructors = tp.Union[
         tp.Type['ContainerOperand'],
         tp.Tuple[tp.Type['ContainerOperand'], ...]
         ]
-DtypeSpecOrSpecs = tp.Union['TDtypeSpecifier', tp.Tuple['TDtypeSpecifier', ...]]
+TDtypeSpecOrSpecs = tp.Union['TDtypeSpecifier', tp.Tuple['TDtypeSpecifier', ...]]
 
-BuildElement = tp.Union[tp.Type['ContainerOperand'], 'TDtypeSpecifier']
-BuildArg = tp.Union[BuildElement, tp.Tuple[BuildElement]]
-TBuildType = tp.Tuple[BuildArg, ...]
+TBuildElement = tp.Union[tp.Type['ContainerOperand'], 'TDtypeSpecifier']
+TBuildArg = tp.Union[TBuildElement, tp.Tuple[TBuildElement]]
+TBuildType = tp.Tuple[TBuildArg, ...]
 
-ShapeType = tp.Tuple[int, int]
-IndexTypes = tp.Union['Index', 'IndexHierarchy']
+TShapeType = tp.Tuple[int, int]
+TIndexTypes = tp.Union['Index', 'IndexHierarchy']
 
 
 DTYPE_OBJECT = np.dtype(object)
@@ -108,7 +101,7 @@ def repeat_count(iter: tp.Iterable[T],
 #-------------------------------------------------------------------------------
 def get_str_to_constructor(
         module_sf: tp.Optional[ModuleType],
-        ) -> StrToType:
+        ) -> TStrToType:
     if module_sf is None:
         import static_frame as sf
         module_sf = sf
@@ -155,7 +148,7 @@ def get_str_to_constructor(
     return ref
 
 
-def get_str_to_dtype() -> StrToType:
+def get_str_to_dtype() -> TStrToType:
     '''Get a mapping from a string representation to a dtype specifier (not always a dtype)
     '''
     ref = {}
@@ -198,7 +191,7 @@ def get_str_to_dtype() -> StrToType:
 
 
 class StrToTypeInterface:
-    '''Wrapper around StrToType mapping that provides informative key-errors.
+    '''Wrapper around TStrToType mapping that provides informative key-errors.
     '''
     def __init__(self,
             module_sf: tp.Optional[ModuleType] = None,
@@ -224,12 +217,14 @@ class StrToTypeInterface:
             raise FrameFixtureSyntaxError(f'{key!r} is not a valid specifier. Choose a constructor specifier ({", ".join(self._constructor_specifiers.keys())}) or a dtype specifier ({", ".join(self._dtype_specifiers.keys())})') from None
 
 
+
 #-------------------------------------------------------------------------------
 class SourceValues:
     _SEED = 22
     _COUNT = 0 # current count; this values is mutated
 
-    _INTS = EMPTY_ARRAY
+    _INTS = EMPTY_ARRAY # will be a numpy array of int64
+    _INTS_DTYPE = np.dtype(np.int64);
     _CHARS = EMPTY_ARRAY
     _BYTES = EMPTY_ARRAY
 
@@ -271,14 +266,14 @@ class SourceValues:
             cls._COUNT = count * 2
 
             if not len(cls._INTS):
-                values_int = np.arange(cls._COUNT, dtype=np.int64)
+                values_int = np.arange(cls._COUNT, dtype=cls._INTS_DTYPE)
                 cls.shuffle(values_int)
                 cls._INTS = values_int
                 cls._CHARS = cls._ints_to_chars(cls._INTS)
                 cls._BYTES = cls._CHARS.astype(DTYPE_BYTES)
             else:
                 offset = len(cls._INTS)
-                values_ext = np.arange(offset, cls._COUNT, dtype=np.int64)
+                values_ext = np.arange(offset, cls._COUNT, dtype=cls._INTS_DTYPE)
                 cls.shuffle(values_ext)
                 cls._INTS = np.concatenate((cls._INTS, values_ext))
                 cls._CHARS = np.concatenate((
@@ -297,9 +292,15 @@ class SourceValues:
         cls.update_primitives(count)
 
         if dtype.kind == 'i': # int
-            def gen() -> tp.Iterator[tp.Any]:
-                for v in cls._INTS:
-                    yield v * (-1 if v % 3 == 0 else 1)
+            # print('len', count, dtype)
+            if dtype == cls._INTS_DTYPE:
+                def gen() -> tp.Iterator[tp.Any]:
+                    for v in cls._INTS:
+                        yield v * (-1 if v % 3 == 0 else 1)
+            else:
+                def gen() -> tp.Iterator[tp.Any]:
+                    for v in cls._INTS:
+                        yield v.astype(dtype) * (-1 if v % 3 == 0 else 1)
 
         elif dtype.kind == 'u': # int unsigned
             def gen() -> tp.Iterator[tp.Any]:
@@ -424,7 +425,7 @@ class SourceValues:
     @classmethod
     @lru_cache(maxsize=128)
     def dtype_spec_to_array(cls,
-            dtype_spec: DtypeSpecOrSpecs,
+            dtype_spec: TDtypeSpecOrSpecs,
             count: int = COUNT_INIT,
             shift: int = 0,
             ) -> TNDArrayAny:
@@ -484,7 +485,7 @@ class Grammar:
 
     @classmethod
     def validate(cls,
-            constructors: StrConstructorsType,
+            constructors: TStrConstructorsType,
             ) -> None:
         if cls.SHAPE not in constructors:
             raise FrameFixtureSyntaxError(f'missing required label: {cls.SHAPE}')
@@ -502,7 +503,7 @@ class Grammar:
     @classmethod
     def dsl_to_str_constructors(cls,
             dsl: str,
-            ) -> StrConstructorsType:
+            ) -> TStrConstructorsType:
 
         body = ast.parse(dsl).body
         if len(body) != 1:
@@ -530,12 +531,12 @@ class Grammar:
         else:
             raise FrameFixtureSyntaxError(f'no support for token {root.value}')
 
-        constructors: StrConstructorsType = {}
+        constructors: TStrConstructorsType = {}
 
         for p in parts(): # each is a Call object
             key = p.func.id #type: ignore
 
-            args: tp.List[StrConstructorArg] = []
+            args: tp.List[TStrConstructorArg] = []
             for arg in p.args:
                 if isinstance(arg, ast.Tuple):
                     args.append(tuple(sub.id for sub in arg.elts)) #type: ignore
@@ -624,10 +625,10 @@ class Fixture:
     @staticmethod
     def _build_index(
             count: int,
-            constructor: ConstructorOrConstructors,
-            dtype_spec: DtypeSpecOrSpecs,
+            constructor: TConstructorOrConstructors,
+            dtype_spec: TDtypeSpecOrSpecs,
             str_to_type: StrToTypeInterface,
-            ) -> IndexTypes:
+            ) -> TIndexTypes:
 
         constructor_is_tuple = isinstance(constructor, tuple)
 
@@ -668,8 +669,8 @@ class Fixture:
 
     @staticmethod
     def _build_type_blocks(
-            shape: ShapeType,
-            dtype_specs: tp.Sequence[DtypeSpecOrSpecs],
+            shape: TShapeType,
+            dtype_specs: tp.Sequence[TDtypeSpecOrSpecs],
             str_to_type: StrToTypeInterface,
             ) -> 'TypeBlocks':
 
@@ -691,12 +692,12 @@ class Fixture:
     #---------------------------------------------------------------------------
     @staticmethod
     def _str_to_build(
-            constructor: StrConstructorType, # typle of elements or tuples
+            constructor: TStrConstructorType, # typle of elements or tuples
             str_to_type: StrToTypeInterface,
             ) -> TBuildType:
         '''Convert strings to types or SF classes.
         '''
-        def gen() -> tp.Iterator[BuildArg]:
+        def gen() -> tp.Iterator[TBuildArg]:
             for v in constructor:
                 if isinstance(v, tuple):
                     yield tuple(str_to_type[part] for part in v) # type: ignore
@@ -706,14 +707,14 @@ class Fixture:
 
     @classmethod
     def _to_containers(cls,
-            constructors: StrConstructorsType,
+            constructors: TStrConstructorsType,
             str_to_type: StrToTypeInterface,
             ) -> tp.Tuple['TypeBlocks',
-                    tp.Optional[IndexTypes],
-                    tp.Optional[IndexTypes],
+                    tp.Optional[TIndexTypes],
+                    tp.Optional[TIndexTypes],
                     ]:
 
-        shape: ShapeType = tp.cast(ShapeType, constructors['s'])
+        shape: TShapeType = tp.cast(TShapeType, constructors['s'])
 
         if Grammar.VALUES not in constructors:
             values_constructor = ('float',)

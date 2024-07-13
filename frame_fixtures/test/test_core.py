@@ -221,3 +221,17 @@ def test_index_dt64_a() -> None:
     for u in DT64_UNITS:
         f = Fixture.parse(f's(3,2)|i(I{u}, dt{u})')
         assert f.index.dtype == np.dtype(f'datetime64[{u}]') # type: ignore
+
+
+#-------------------------------------------------------------------------------
+def test_int8() -> None:
+    dt64 = np.datetime64
+    f1 = Fixture.parse('s(2,4)|v(int8,str)|i(ID,dtD)|c(ID,dtD)').rename('x', index='y', columns='z')
+    assert(f1.to_pairs() ==
+            ((dt64('2065-01-17'), ((dt64('2065-01-17'), np.int8(47)), (dt64('1979-12-28'), np.int8(-61)))), (dt64('1979-12-28'), ((dt64('2065-01-17'), np.str_('zaji')), (dt64('1979-12-28'), np.str_('zJnC')))), (dt64('2219-12-23'), ((dt64('2065-01-17'), np.int8(-64)), (dt64('1979-12-28'), np.int8(-91)))), (dt64('2052-09-12'), ((dt64('2065-01-17'), np.str_('z2Oo')), (dt64('1979-12-28'), np.str_('z5l6'))))))
+    # <Frame: x>
+    # <IndexDate: z>  2065-01-17 1979-12-28 2219-12-23 2052-09-12 <datetime64[D]>
+    # <IndexDate: y>
+    # 2065-01-17      47         zaji       -64        z2Oo
+    # 1979-12-28      -61        zJnC       -91        z5l6
+    # <datetime64[D]> <int8>     <<U4>      <int8>     <<U4>
