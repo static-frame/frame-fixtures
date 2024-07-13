@@ -117,6 +117,14 @@ FrameFixtures support defining features unique to StaticFrame, such as specifyin
 
 
 
+What is New in FramFixtures
+------------------------------
+
+1.1.0
+............
+
+Now compatible with NumPy 2.0.
+
 
 Grammar
 ------------------------------

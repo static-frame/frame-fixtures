@@ -3,14 +3,6 @@ from codecs import open
 from os import path
 import typing as tp
 
-# https://packaging.python.org/distributing/
-# to deploy:
-# pip install wheel, twine
-# python setup.py sdist
-# python setup.py bdist_wheel
-# twine upload dist/*
-# rm -r build; rm -r dist; rm -r *.egg-info
-
 ROOT_DIR_FP = path.abspath(path.dirname(__file__))
 
 def get_long_description() -> str:
